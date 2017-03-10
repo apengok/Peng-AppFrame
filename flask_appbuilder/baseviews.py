@@ -440,3 +440,237 @@ class BaseCRUDView(BaseModelView):
                 order_column=order_column,
                 order_direction=order_direction,
                 page=page,page_size=page_size)
+
+    def _get_related_views_widgets(self,item,orders=None,pages=None,page_sizes=None,widgets=None,**args):
+        """
+        :returns:
+            Returns a dict with 'related_views' key with a list of Model View widgets
+        """
+        widgets = widgets or {}
+        widgets['related_views'] = []
+        for view in self._related_views:
+            if orders.get(view.__class__.__name__):
+                order_column,order_direction = orders.get(view.__class__.__name__)
+            else:
+                order_column,order_direction = '',''
+            widgets['related_view'].append(self._get_related_view_widget(item,view,
+                oreder_column,order_direction,
+                page=pages.get(view.__class__.__name__),
+                page_size=page_sizes.get(view.__class__.__name__)))
+        return widgets
+
+    def _get_view_widget(self,**kwargs):
+        """
+        :return:
+            Returns a Model View widget
+        """
+        return self._get_list_widget(**kwargs).get('list')
+
+    def _get_list_widget(self,filters,actions=None,order_column='',order_direction='',
+            page=None,page_size=None,widgets=None,**args):
+        widgets = widgets or {}
+        actions = actions or self.actions
+        page_size = page_size or self.page_size
+        if not order_column and self.base_order:
+            order_column,order_direction = self.base_order
+        joined_filters = filters.get_joined_filters(self._base_filters)
+        count,lst = self.datamodel.query(joined_filters,order_column,order_direction,page=page,page_size=page_size)
+        pks = self.datamodel.get_keys(lst)
+        widgets['list'] = self.list_widget(label_columns=self.label_columns,
+                include_columns=self.list_columns,
+                value_columns=self.datamodel.get_values(lst,self.list_columns),
+                order_columns=self.order_columns,
+                formatters_columns=self.formatters_columns,
+                page=page,page_size=page_size,
+                count=count,pks=pks,actions=actions,
+                filters=filters,modelview_name=self.__class__.__name)
+        return widgets
+
+    def _get_show_widget(self,pk,item,widgets=None,actions=None,show_fieldsets=None):
+        widgets = widgets or {}
+        actions = actions or self.actions
+        show_fieldsets = show_fieldsets or self.show_fieldsets
+        widgets['show']=self.show_widget(pk=pk,
+                label_columns=self.show_columns,
+                include_columns=self.show_columns,
+                value_columns=self.datamodel.get_values_item(item,self.show_columns),
+                formatters_columns=self.formatters_columns,
+                actions=actions,
+                fieldsets=show_fieldsets,
+                modelview_name=self.__class__.__name__)
+        return widgets
+
+    def _get_add_widget(self,form,exclude_cols=None,widgets=None):
+        exclude_cols = exclude_cols or []
+        widgets = widgets or {}
+        widgets['add'] = self.add_widget(form=form,
+                include_cols=self.add_columns,
+                exclude_cols=exclude_cols,
+                fieldsets=self.add_fieldsets)
+        return widgets
+
+    def _get_edit_widget(self,form,exclude_cols=None,widgets=None):
+        exclude_cols = exclude_cols or []
+        widgets = widgets or {}
+        widgets['edit'] = self.edit_widget(form=form,
+                include_cols=self.edit_columns,
+                exclude_cols=exclude_cols,
+                fieldsets=self.edit_fieldsets)
+        return widgets
+
+    def get_uninit_inner_views(self):
+        return self.related_views
+
+    def get_init_inner_views(self):
+        return self._related_views
+
+
+    """
+    -----------------------------------------
+        CRUD functions behaviour
+    -----------------------------------------
+    """
+
+    def _list(self):
+        if get_order_args().get(self.__class__.__name__):
+            order_column,order_direction = get_order_args().get(self.__class__.__name__)
+        else:
+            order_column,order_direction = '',''
+        page = get_page_args().get(self.__class__.__name__)
+        page_size = get_page_size_args().get(self.__class__.__name__)
+        get_filter_args(self._filters)
+        widgets = self._get_list_widget(filters=self._filters,
+                order_column=order_column,
+                order_direction=order_direction,
+                page=page,
+                page_size=page_size)
+        form = self.search_form.refresh()
+        self.update_redirect()
+        return self._get_search_widget(form=form,widgets=widgets)
+
+    def _show(self,pk):
+        pages = get_page_args()
+        page_sizes = get_page_size_args()
+        orders = get_order_args()
+
+        item = self.datamodel.get(pk,self._base_filters)
+        if not item:
+            abort(404)
+        widgets = self._get_show_widget(pk,item)
+        self.update_redirection()
+        return self._get_related_views_widgets(item,orders=orders,
+                pages=pages,page_sizes=page_sizes,widgets=widgets)
+
+    def _add(self):
+        is_valid_form = True
+        get_filter_args(self._filters)
+        exclude_cols = self._filters.get_relation_cols()
+        form = self.add_form.refresh()
+
+        if request.method == 'POST':
+            self._fill_form_exclude_cols(exclude_cols,form)
+            if form.validate():
+                item = self.datamodel.obj()
+                form.populate_obj(item)
+
+                try:
+                    self.pre_add(item)
+                except Exception as e:
+                    flash(str(e),"danger")
+                else:
+                    if self.datamodel.add(item):
+                        self.post_add(item)
+                    flash(*self.datamodel.message)
+                finally:
+                    return None
+            else:
+                is_valid_form = False
+        if is_valid_form:
+            self.update_redirect()
+        return self._get_add_widget(form=form,exclude_cols=exclude_cols)
+
+    def _edit(self,pk):
+        is_valid_form = True
+        pages = get_page_args()
+        page_sizes = get_page_size_args()
+        orders = get_order_args()
+        get_filter_args(self._filters)
+        exclude_cols = self._filters.get_relation_cols()
+
+        item = self.datamodel.get(pk,self._base_filters)
+        if not item:
+            abort(404)
+        #convert pk to correct type,if pk is non string type.
+        pk = self.datamodel.get_pk_value(item)
+
+        if request.method == 'POST':
+            form = self.edit_form.refresh(request.form)
+            self._fill_form_exclude_cols(exclude_cols,form)
+            form._id = pk
+            if form.validate():
+                form.populate_obj(item)
+                try:
+                    self.pre_update(item)
+                except Exception as e:
+                    flash(str(e),"danger")
+                else:
+                    if self.datamodel.edit(item):
+                        self.post_update(item)
+                    flash(*self.datamodel.message)
+                finally:
+                    return None
+            else:
+                is_valid_form = False
+        else:
+            form = self.edit_form.refresh(obj=item)
+        widgets = self._get_edit_widget(form=form,exclude_cols=exclude_cols)
+        widgets = self._get_related_views_widgets(item,filters={},
+                    orders=orders,pages=pages,page_sizes=page_sizes,widgets=widgets)
+        if is_valid_form:
+            self.update_redirect()
+        return widgets
+
+    def _delete(self,pk):
+        item = self.datamodel.get(pk,self._base_filters)
+        if not item:
+            abort(404)
+        try:
+            self.pre_delete(item)
+        except Exception as e:
+            flash(str(e),"danger")
+        else:
+            if self.datamodel.delete(item):
+                self.post_delete(item)
+            flash(*self.datamodel.message)
+            self.update_redirect()
+
+    """
+    -----------------------------------
+        HELPER FUNCTIONS
+    -----------------------------------
+    """
+    def _fill_form_exclude_cols(self,exclude_cols,form):
+        for filter_key in exclude_cols:
+            filter_value = self._filters.get_filter_value(filter_key)
+            rel_obj = self.datamodel.get_related_obj(filter_key,filter_value)
+            field = getattr(form,filter_key)
+            field.data = rel_obj
+
+    def pre_update(self,item):
+        pass
+
+    def post_update(self,item):
+        pass
+
+    def pre_add(self,item):
+        pass
+
+    def post_add(self,item):
+        pass
+
+    def pre_delete(self,item):
+        pass
+
+    def post_delete(self,item):
+        pass
+
