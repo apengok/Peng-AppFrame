@@ -34,3 +34,229 @@ def dynamic_class_import(class_path):
         log.error(LOGMSG_ERR_FAB_ADD0N_IMPORT.format(class_path,e))
 
 
+class AppBuilder(object):
+    """
+
+        This is the base class for all the framework.
+        This is were you will register all your views
+        and create the menu structure.
+        will hold your flask app objec.all your views and security classes.
+
+        initialize your application like this for SQLAlchemy::
+
+            from flask import Flask
+            from flask_appbuilder import SQLA,AppBuilder
+
+            app = Flask(__name__)
+            app.config.from_object('config')
+            db = SQLA(app)
+            appbuilder = AppBuilder(app,db.session)
+
+        when using MongoEngine::
+
+            from flask import Flask
+            from flask_appbuilder imprt AppBuilder
+            from flask_appbuilder.security.mongoengine.manager import SecurityManager
+            from flask_mongoengine import MongoEngine
+
+            app = Flask(__name__)
+            app.config.from_object('config')
+            dbmongo = MongoEngine(app)
+            appbuilder = AppBuilder(app,security_manager_class=SecurityManager)
+
+        You can also create everything as an application factory
+    """
+    baseviews = []
+    security_manager_class = None
+#Flask app
+    app = None
+#Database Session
+    session = None
+#Security Manager Class
+    sm = None
+#Babel Managere class
+    bm = None
+#dict with addon name has key and intantiated class has value
+    addon_managers = None
+#temporary list that hold addon_managers config key
+    _addon_managers = None
+
+    menu = None
+    indexview = None
+
+    static_folder = None
+    static_url_path = None
+
+    template_filters = None
+
+    def __init__(self,app=None,
+            session = None,
+            menu=None,
+            indexview=None,
+            base_template='appbuilder/baselayout.html',
+            static_folder='static/appbuilder',
+            static_url_path='/appbuilder',
+            security_manager_class=None):
+
+        self.baseviews = []
+        self._addon_managers = []
+        self.addon_managers = {}
+        self.menu = menu or Menu()
+        self.base_template = base_template
+        self.security_manager_class = security_manager_class
+        self.indexview = indexview or IndexView
+        self.static_folder = static_folder
+        self.static_url_path = static_url_path
+
+        self.app = app
+        if app is not None:
+            self.init_app(app,session)
+
+    def init_app(self,app,session):
+        """
+            Will initialize the Flask app,supporting the app factory pattern
+        """
+        app.config.setdefault('APP_NAME','F.A.B.')
+        app.config.setdefault('APP_THEME','')
+        app.config.setdefault('APP_ICON','')
+        app.config.setdefault('LANGUAGES',{'en':{'flag':'gb','name':'English'}})
+        app.config.setdefault('ADDON_MANAGERS',[])
+        if self.security_manager_class is None:
+            from flask_appbuilder.security.sqla.manager import SecurityManager
+            self.security_manager_class = SecurityManager
+        self._addon_managers = app.config['ADDON_MANAGERS']
+        self.session = session
+        self.sm = self.security_manager_class(self)
+        self.bm = BabelManager(self)
+        self._add_global_static()
+        self._add_golbal_filters()
+        app.before_request(self.sm.before_request)
+        self._add_admin_views()
+        self._add_addon_views()
+        self.add_menu_permissions()
+        if not self.app:
+            for baseview in self.baseview:
+                self.check_and_init(baseview)
+#Register eht views has vlueprints
+                self.register_blueprint(baseview)
+                self._add_permission(baseview)
+        self._init_extension(app)
+
+    def _init_extension(self,app):
+        if not hasattr(app,'extensions'):
+            app.extensions = {}
+        app.extensions['appbuilder'] = self
+
+    @property
+    def get_app(self):
+
+        if self.app:
+            return self.app
+        else:
+            return current_app
+
+    @property
+    def get_session(self):
+        return self.session
+
+    @property
+    def app_name(self):
+        return self.get_app.config['APP_NAME']
+
+    @property
+    def app_theme(self):
+        return self.get_app.config['APP_THEME']
+
+    @property
+    def app_icon(self):
+        return self.get_app.config['APP_ICON']
+
+    @property
+    def language(self):
+        return self.get_app.config['LANGUAGES']
+
+    @property
+    def version(self):
+        return VERSION_STRING
+
+    def _add_global_filters(self):
+        self.template_filters = TemplateFilters(self.get_app,self.sm)
+
+    def _add_global_static(self):
+        bp = Blueprint('appbuilder',__name__,url_prefix='/static',
+                template_folder='templates',
+                static_folder=self.static_folder,
+                static_url_path=self,static_url_path)
+        self.get_app.register_blueprint(bp)
+
+    def _add_admin_views(self):
+
+        self.indexview = self._check_and_init(self.indexview)
+        self.add_view_no_menu(self.indexview)
+        self.add_view_no_menu(UtilView())
+        self.bm.register_views()
+        self.sm.register_views()
+
+    def _add_addon_views(self):
+
+        for addon in self._addon_managers:
+            addon_class = dynamic_class_import(addon)
+            if addon_class:
+                addon_class = addon_class(self)
+                try:
+                    addon_class.pre_process()
+                    addon_class.register_views()
+                    addon_class.post_process()
+                    self.addon_managers[addon] = addon_class
+                    log.info(LOGMSG_INF_FAB_ADDON_ADDED.format(str(addon)))
+                except Exception as e:
+                    log.error(LOGMSG_ERR_FAB_ADDON_PROCESS.format(addon,e))
+
+    def _add_permission_menu(self,name):
+        try:
+            self.sm.add_permissions_menu(name)
+        except Exception as e:
+            log.error(LOGMSG_ERR_FAB_ADD_PERMISSION_MENU.format(str(e)))
+
+    def _add_menu_permission(self):
+        for category in self.menu.get_list():
+            self._add_permissions_menu(category.name)
+            for item in category.childs:
+                if item.name != '-':
+                    self._add_permissions_menu(item.name)
+
+    def _check_and_init(self,baseview):
+        if hasattr(baseview,'datamodel'):
+            if baseview.datamodel.session is None:
+                baseview.datamodel.session = self.session
+        if hasattr(baseview,'__call__'):
+            baseview = baseview()
+        return baseview
+
+    def add_view(self,baseview,name,href="",icon="",label="",category=""
+            category_icon="",category_label=""):
+
+        baseview = self._check_and_init(baseview)
+        log.info(LOGMSG_INF_FAB_ADD_VIEW.format(baseview.__class__.__name__,name))
+
+        if not self._view_exists(baseview):
+            baseview.appbuilder = self
+            self.baseviews.append(baseview)
+            self._process_inner_views()
+            if self.app:
+                self.register_bluprint(baseview)
+                self._add_permission(baseview)
+        self.add_link(name=name,href=href,icon=icon,label=label,category=category,
+                category_icon=category_icon,category_label=category_label,baseview=baseview)
+        return baseview
+
+    def add_link(self,name,href,icon="",label="",category="",category_icon="",
+            category_label="",baseview=None):
+
+        self.menu.add_link(name=name,href=href,icon=icon,label=label,category=category,
+                category_icon=category_icon,category_label=category_label,baseview=baseview)
+        if self.app:
+            self._add_permissions_menu(name)
+            if category:
+                self._add_permissions_menu(category)
+

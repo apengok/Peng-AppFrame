@@ -491,3 +491,135 @@ class MasterDetailView(BaseCRUDView):
                 related_views=related_views,
                 master_div_width=self.master_div_width)
 
+
+
+class MultipleView(BaseView):
+
+    list_template = 'appbuilder/general/model/multiple_views.html'
+    views = None
+    _views = None
+
+    def __init__(self,**kwargs):
+        super(MultipleView,self).__init__(**kwargs)
+        self.views = self.views or list()
+        self._views = self._views or list()
+
+    def get_uninit_inner_views(self):
+        return self.views
+
+    @expose('/list/')
+    @has_access
+    def list(self):
+        pages = get_page_args()
+        page_sizes = get_page_size_args()
+        orders = get_order_args()
+        views_widgets = list()
+        for view in self._views:
+            if orders.get(view.__class__.__name__):
+                order_column,order_direction = orders.get(view.__class__.__name__)
+            else:
+                order_column,order_direction = '',''
+            page = pages.get(view.__class__.__name__)
+            page_size = page_sizes.get(view.__class__.__name__)
+            views_widgets.append(view._get_view_widget(filters=view._base_filters,
+                order_column=order_column,
+                order_direction=order_direction,
+                page=page,page_size=page_size))
+        self.update_redirect()
+        return self.render_template(self.list_template,
+                views=self._views,views_widgets=views_widgets)
+
+
+
+class CompactCRUDMixin(BaseCRUDView):
+
+    @classmethod
+    def set_key(cls,k,v):
+        k = cls.__name__ + '__' + k
+        session[k] = v
+
+    @classmethod
+    def get_key(cls,k,default=None):
+        k = cls.__name__ + '__' + k
+        if k in session:
+            return session[k]
+        else:
+            return default
+
+    @classmethod
+    def del_key(cls,k):
+        k = cls.__name__ + '__' + k
+        session.pop(k)
+
+    def _get_list_widget(self,**args):
+        widgets = super(CompactCRUDMixin,self)._get_list_widget(**args)
+        session_form_widget = self.get_key('session_form_widget',None)
+
+        form_widget = None
+        if session_form_widget == 'add':
+            form_widget = self._add().get('add')
+        elif session_form_widget == 'edit':
+            pk = self.get_key('session_form_edit_pk')
+            if pk:
+                form_widget = self._edit(int(pk)).get('edit')
+        return {
+                'list':GroupFormListWidget(
+                    list_widget=widgets.get('list'),
+                    form_widget = form_widget,
+                    form_action=self.get_key('session_form_action',''),
+                    form_title=self.get_key('session_form_title',''),
+                    )
+                }
+
+    @expose('/list/',methods=['GET','POST'])
+    @has_access
+    def list(self):
+        list_widgets = self._list()
+        return self.render_template(self.list_template,
+                title=self.list_title,widgets=list_widgets)
+
+    @expose('/add',methods=['GET','POST'])
+    @has_access
+    def add(self):
+        widgets = self._add()
+        if not widgets:
+            self.set_key('session_form_action','')
+            self.set_key('session_form_widget',None)
+            return redirect(request.referer)
+        else:
+            self.set_key('session_form_widget','add')
+            self.set_key('session_form_action',request.full_path)
+            self.set_key('session_form_title',self.add_title)
+            return redirect(self.get_redirect())
+
+    @expose('/edit/<pk>',methods=['GET','POST'])
+    @has_access
+    def edit(self,pk):
+        widgets = self._edit(pk)
+        self.update_redirect()
+        if not widgets:
+            self.set_key('session_form_action','')
+            self.set_key('session_form_widget',None)
+            return redirect(self.get_redirect())
+        else:
+            self.set_key('session_form_widget','edit')
+            self.set_key('session_form_action',request.full_path)
+            self.set_key('session_form_title',self.add_title)
+            self.set_key('session_form_edit_pk',pk)
+            return redirect(self.get_redirect())
+
+    @expose('/delete/<pk>')
+    @has_access
+    def delete(self,pk):
+        self._delete(pk)
+        edit_pk = self.get_key('session_form_edit_pk')
+        if pk == edit_pk:
+            self.del_key('session_form_edit_pk')
+        return redirect(self.get_redirect())
+
+"""
+    This is for retro compatibility
+"""
+GeneralView = ModelView
+
+
