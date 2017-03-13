@@ -260,3 +260,66 @@ class AppBuilder(object):
             if category:
                 self._add_permissions_menu(category)
 
+
+    def add_separator(self,category):
+        self.menu.add_separator(category)
+
+    def add_view_no_menu(self,baseview,endpoint=None,static_folder=None):
+        baseview = self._check_and_init(baseview)
+        log.info(LOGMSG_INF_FAB_ADD_VIEW.format(baseview.__class__.__name__,""))
+
+        if not self._view_exists(baseview):
+            baseview.appbuilder = self
+            self.baseviews.append(baseview)
+            self._process_inner_views()
+            if self.app:
+                self.register_blueprint(baseview,endpoint=endpoint,static_folder=static_folder)
+                self._add_permission(baseview)
+        else:
+            log.warning(LOGMSG_WAR_FAB_VIEW_EXISTS.format(baseview.__class__.__name__))
+        return baseview
+
+    def security_cleanup(self):
+        self.sm.security_cleanup(self.baseviews,self.menu)
+
+    @property
+    def get_url_for_login(self):
+        return url_for('%s.%s'%(self.sm.auth_view.endpoint,'login'))
+
+    @property
+    def get_url_for_logout(self):
+        return url_for('%s.%s'%(self.sm.auth_view.endpoint,'logout'))
+
+    @property
+    def get_url_for_index(self):
+        return url_for('%s.%s'%(self.indexview.endpoint,self.indexview.default_view))
+
+    @property
+    def get_url_for_userinfo(self):
+        return url_for('%s.%s'%(self.sm.user_view.endpoint,'userinfo'))
+
+    @property
+    def get_url_for_locale(self,lang):
+        return url_for('%s.%s'%(self.bm.locale_view.endpoint,self.bm.locale_view.defaultview),locale=lang)
+
+    def _add_permission(self,baseview):
+        try:
+            self.sm.add_permissions_view(baseview.base_permissions,baseview.__class__.__name__)
+        except Exception as e:
+            log.error(LOGMSG_ERR_FAB_ADD_PERMISSION_VIEW.format(str(e)))
+
+    def register_blueprint(self,baseview,endpoint=None,static_folder=None):
+        self.get_app.register_blueprint(baseview.create_blueprint(self,endpoint=endpoint,static_folder=static_folder))
+
+    def _view_exists(self,view):
+        for baseview in self.baseviews:
+            if baseview.__class__ == view.__class__:
+                return True
+        return False
+
+    def _process_innder_views(self):
+        for view in self.baseviews:
+            for inner_class in view.get_uninit_inner_view():
+                for v in self.baseviews:
+                    if isinstance(v,inner_class) and v not in view.get_init_inner_views():
+                        view.get_init_inner_views().append(v)
