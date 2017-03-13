@@ -370,3 +370,141 @@ class AuthLDAPView(AuthView):
     """
         For Future Use,API Auth,must check howto keep REST stateless
     """
+    """
+    @expose_api(name='auth',url='/api/auth')
+    def auth(self):
+        if g.user is not None and g.user.is_authenticated():
+            http_return_code = 401
+            response = make_response(jsonify({'message':'Login Failed already authenticated',
+                'severity':'critical'}),http_return_code)
+        username = str(request.args.get('username'))
+        password = str(request.args.get('password'))
+        user = self.appbuilder.sm.auth_user_ldap(username,password)
+        if not user:
+            http_return_code = 401
+            response = make_response(jsonify({'message':'Login Failed',
+                'serverity':'critical'}),http_return_code)
+        else:
+            login_user(user,remember=False)
+            http_return_code = 201
+            response = make_response(jsonify({'message':'Login Success',
+                'serverity':'info'}),http_return_code)
+        return response
+    """
+
+
+
+class AuthOIDView(AuthView):
+    login_template = 'appbuilder/general/security/login_oid.html'
+    oid_ask_for = ['email']
+    oid_ask_for_optional = []
+
+    def __init__(self):
+        super(AuthOIDView,self).__init__()
+
+    @expose('/login/',methods=['GET','POST'])
+    def login(self,flag=True):
+        @self.appbuilder.sm.oid.loginhandler
+        def login_handler(self):
+            if g.user is not None and g.user.is_authenticated():
+                return redirect(self.appbuilder.get_url_for_index)
+            form = LoginForm_oid()
+            if form.validate_on_submit():
+                session['remember_me'] = form.remember_me.data
+                return self.appbuilder.sm.oid.try_login(form.openid.data,ask_for=self.oid_ask_for,
+                        ask_for_optional=self.oid_ask_for_optional)
+            return self.render_template(self.login_template,title=title,form=form,
+                    providers=self.appbuilder.sm.openid_providers,appbuilder=self.appbuilder)
+
+        @self.appbuilder.sm.oid.after_login
+        def after_login(resp):
+            if resp.email is None or resp.email == "":
+                flash(as_unicode(self.invalid_login_message),'warning')
+                return redirect('login')
+            user = self.appbuilder.sm.auth_user_oid(resp.email)
+            if user is None:
+                flash(as_unicode(self.invalid_login_message),'warning')
+                return redirect('login')
+            remember_me = False
+            if 'remember_me' in session:
+                remember_me = session['remember_me']
+                session.pop('remember_me',None)
+            login_user(user,remember=remember_me)
+            return redirect(self.appbuilder.get_url_for_index)
+        return login_handler(self)
+
+
+
+class AuthOAuthView(AuthView):
+    login_template = 'appbuilder/general/security/login_oauth.html'
+
+    @expose('/login/')
+    @expose('/login/<provider>')
+    @expose('/login/<provider>/<register>')
+    def login(self,provider=None,register=None):
+        log.debug('Provider:{0}'.format(provider))
+        if g.user is not None and g.user.is_authenticated():
+            log.debug("Already authentiated {0}".format(g.user))
+            return redirect(self.appbuilder.get_url_for_index)
+        if provider is None:
+            return self.render_template(self.login_template,providers=self.appbuilder.sm.oauth_providers,
+                    title=self.title,appbuilder=self.appbuilder)
+        else:
+            log.debug("Going to call authorize for:{0}".format(provider))
+            try:
+                if register:
+                    log.debug('Login to Register')
+                    session['register']=True
+                return self.appbuilder.sm.oauth_remotes[provider].authorize(callback=url_for('.oauth_authorized',provider=provider,_external=True))
+            except Exception as e:
+                log.error("Error on OAuth authorize:{0}".format(e))
+                flash(as_unicode(self.invalid_login_message),'warning')
+                return redirect(self.appbuilder.get_url_for_index)
+
+    @expose('/oauth-authorized/<provider>')
+    def oauth_authorized(self,provider):
+        log.debug("Authorized init")
+        resp = self.appbuilder.sm.oauth_remotes[provider].authorized_response()
+        if resp is None:
+            flash(u'You denied the request to sign in.','warning')
+            return redirect('login')
+        log.debug('OAUTH Authorized resp:{0}'.format(resp))
+#Retrieves specific user info from the provider
+        try:
+            self.appbuilder.sm.set_oauth_session(provider,resp)
+            userinfo = self.appbuilder.sm.oauth_user_info(provider)
+        except Exception as e:
+            log.error("Error returing OAuth user info:{0}".format(e))
+            user = None
+        else:
+            log.debug("User info retrieved from {0}:{1}".format(provider,userinfo))
+            #Is this Authorization to register a new user?
+            if session.pop('register','None'):
+                return redirect(self.appbuilder.sm.registeruseroauthview.get_default_url(**userinfo))
+            user = self.appbuilder.sm.auth_user_oauth(userinfo)
+
+        if user is None:
+            flash(as_unicode(self.invalid_login_message),'warning')
+            return redirect('login')
+        else:
+            login_user(user)
+            return redirect(self.appbuilder.get_url_for_index)
+
+
+class AuthRemoteUserView(AuthView):
+    login_template = ''
+
+    @expose('/login/')
+    def login(self):
+        username = request.environ.get('REMOTE_USER')
+        if g.user is not None and g.user.is_authenticated():
+            return redirect(self.appbuilder.get_url_for_index)
+        if username:
+            user = self.appbuilder.sm.auth_user_remote_user(username)
+            if user is None:
+                flash(as_unicode(self.invalid_login_message),'warning')
+            else:
+                login_user(user)
+        else:
+            flash(as_unicode(self.invalid_login_message),'warning')
+        return redirect(self.appbuilder.get_url_for_index)
