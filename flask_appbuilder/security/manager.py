@@ -345,4 +345,354 @@ class BaseSecurityManager(AbstractSecurityManager):
                 icon="fa-link",label=_('Permission on Views/Menus'),category="Security")
 
 
+    def create_db(self):
+
+        self.add_role(self.auth_role_admin)
+        self.add_role(self.auth_role_public)
+        if self.count_users() == 0:
+            log.warning(LOGMSG_WAR_SEC_NO_USER)
+
+    def reset_password(self,userid,password):
+        user = self.get_user_by_id(userid)
+        user.password = generate_password_hash(password)
+        self.update_user(user)
+
+    def update_user_auth_stat(self,user,success=True):
+        if not user.login_count:
+            user.login_count = 0
+        if not user.fail_login_count:
+            self.fail_login_count = 0
+        if success:
+            user.login_count += 1
+            user.fail_login_count = 0
+        else:
+            user.fail_login_count += 1
+        user.last_login = datetime.datetime.now()
+        self.update_user(user)
+
+    def auth_user_db(self,username,password):
+        if username is None or username == "":
+            return None
+        user = self.find_user(username=username)
+        if user is None or (not user.is_active()):
+            log.info(LOGMSG_WAR_SEC_LOGIN_FAILED.format(username))
+            return None
+        elif check_password_hash(user.password,password):
+            self.update_user_auth_stat(user,True)
+            return user
+        else:
+            self.update_user_auth_stat(user,False)
+            log.info(LOGMSG_WAR_SEC_LOGIN_FAILED.format(username))
+            return None
+
+    def _search_ldap(self,ldap,con,username):
+        if self.auth_ldap_append_domain:
+            username = username + '@' + self.auth_ldap_append_domain
+        filter_str = "%s=%s" % (self.auth_ldap_uid_field,username)
+        user = con.search_s(self.auth_ldap_search,
+                ldap.SCOPE_SUBTREE,
+                filter_str,
+                [self.auth_ldap_firstname_field,
+                    self.autho_ldap_lastname_field,
+                    self.auth_ldap_email_field])
+        if user:
+            if not user[0][0]:
+                return None
+        return user
+
+    def _bind_ldap(self,ldap,con,username,password):
+        try:
+            indirect_user = self.auth_ldap_bind_user
+            if indirect_user:
+                indirect_password = self.auth_ldap_bind_password
+                log.debug("LDAP indirect bind with:{0}".format(indirect_user))
+                con.bind_s(indirect_user,indirect_password)
+                log.dubug("LDAP BIND indirect OK")
+                user = self._search_ldap(ldap,con,username)
+                if user:
+                    log.debug("LDAP got User {0}".format(user))
+                    username = user[0][0]
+                else:
+                    return False
+            log.debug("LDAP bind with:{0} {1}".format(username,"XXXXXX"))
+            if self.auth_ldap_append_domain:
+                username = username + '@' + self.auth_ldap_append_domain
+            con.bind_s(username,password)
+            log.debug("LDAP bind OK:{0}".format(username))
+            return True
+        except ldap.INVALID_CREDENTIALS:
+            return False
+
+    def auth_user_ldap(self,username,password):
+        if username is None or username == "":
+            return None
+        user = self.find_user(username=username)
+        if user is not None and (not user.is_active()):
+            return None
+        else:
+            try:
+                import ldap
+            except:
+                raise Exception("No ldap library for python.")
+                return None
+            try:
+                if self.auth_ldap_allow_self_signed:
+                    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT,ldap.OPT_X_TLS_ALLOW)
+                con = ldap.initialize(self.auth_ldap_server)
+                con.set_option(ldap.OPT_REFERRALS,0)
+
+                if not self._bind_ldap(ldap,con,username,password):
+                    if user:
+                        self.update_user_auth_stat(user,False)
+                    log.info(LOGMSG_WAR_SEC_LOGIN_FAILED.format(username))
+                    return None
+                if not user and not self.auth_user_registration:
+                    return None
+                elif not user and self.auth_user_registration:
+                    new_user = self._search_ldap(ldap,con,username)
+                    if not new_user:
+                        log.warning(LOGMSG_WAR_SEC_NOLDAP_OBJ.format(username))
+                        return None
+                    ldap_user_info = new_user[0][1]
+                    if self.auth_user_registration and user is None:
+                        user = self.add_user(username=username,
+                                first_name=ldap_user_info.get(self.auth_ldap_firstname_field,[username])[0],
+                                last_name=ldap_user_info.get(self.auth_ldap_lastname_field,[username])[0],
+                                email=ldap_user_info.get(self.auth_ldap_email_field,[username + '@email.notfound'])[0],
+                                role=self.find_role(self.auth_user_registration_role)
+                            )
+                self.update_user_auth_stat(user)
+                return user
+
+            except ldap.LDAPError as e:
+                if type(e.message) == dict and 'desc' in e.message:
+                    log.error(LOGMSG_ERR_SEC_AUTH_LDAP.format(e.message['desc']))
+                    return None
+                else:
+                    log.error(e)
+                    return None
+
+    def auth_user_oid(self,email):
+        user = self.find_user(email=email)
+        if user is None or (not user.is_active()):
+            log.info(LOGMSG_WAR_SEC_LOGIN_FAILED.format(email))
+            return None
+        else:
+            self.update_user_auth_stat(user)
+            return user
+
+    def auth_user_remote_user(self,username):
+        user = self.find_user(username=username)
+        if user is None or (not user.is_active()):
+            log.info(LOGMSG_WAR_SEC_LOGIN_FAILED.format(username))
+            return None
+        else:
+            self.update_user_auth_stat(user)
+            return user
+
+    def auth_user_oauth(self,userinfo):
+        if 'username' in userinfo:
+            user = self.find_user(username=userinfo['username'])
+        elif 'email' in userinfo:
+            user = self.find_user(email=userinfo['email'])
+        else:
+            log.error('User info does not have username or email {0}'.format(userinfo))
+            return None
+        if user is None or (not user.is_active()):
+            log.info(LOGMSG_WAR_SEC_LOGIN_FAILED.format(userinfo))
+            return None
+        else:
+            self.update_user_auth_stat(user)
+            return user
+
+    """
+    -----------------------
+    PERMISSION ACCESS CHECK
+    -----------------------
+    """
+
+    def is_item_public(self,permission_name,view_name):
+        permissions = self.get_public_permissions()
+        if permissions:
+            for i in permissions:
+                if (view_name == i.view_menu.name) and (permission_name == i.permission.name):
+                    return True
+            return False
+        else:
+            return False
+
+    def _has_view_access(self,user,permission_name,view_name):
+        roles = user.roles
+        for role in roles:
+            permissions = role.permissions
+            if permissions:
+                for permission in permissions:
+                    if (view_name == permission.view_menu.name) and (permission_name == permission.permission.name):
+                        return True
+        return False
+
+    def has_access(self,permission_name,view_name):
+        if current_user.is_authenticated():
+            return self._has_view_access(g.user,permission_name,view_name)
+        else
+            return self.is_item_public(permission_name,view_name)
+
+    def add_permissions_view(self,base_permissions,view_menu):
+        view_menu_db = self.add_view_menu(view_menu)
+        perm_views = self.find_permissions_view_menu(view_menu_db)
+
+        if not perm_views:
+            for permission in base_permissions:
+                pv = self.add_permission_view_menu(permission,view_menu)
+                role_admin = self.find_role(self.auth_role_admin)
+                self.add_permission_role(role_admin,pv)
+        else:
+            role_admin = self.find_role(self.auth_role_admin)
+            for permission in base_permissions:
+                if not self.exist_permission_on_views(perm_views,permission):
+                    pv = self.add_permission_view_menu(permission,view_menu)
+                    self.add_permission_role(role_admin,pv)
+            for perm_view in perm_views:
+                if perm_view.permission.name not in base_permissions:
+                    roles = self.get_all_roles()
+                    perm = self.find_permission(perm_view.permission.name)
+                    for role in roles:
+                        self.del_permission_role(role,perm)
+                    self.del_permission_view_menu(perm_view.permission.name,view_menu)
+                elif perm_view not in role_admin.permissions:
+                    self.add_permission_role(role_admin,perm_view)
+
+    def add_permissions_menu(self,view_menu_name):
+        self.add_view_menu(view_menu_name)
+        pv = self.find_permission_view_menu('menu_access',view_menu_name)
+        if not pv:
+            pv = self.add_permission_view_menu('menu_access',view_menu_name)
+            role_admin = self.find_role(self.auth_role_admin)
+            self.add_permission_role(role_admin,pv)
+
+    def security_cleanup(self,baseviews,menus):
+        viewsmenus = self.get_all_view_menu()
+        roles = self.get_all_roles()
+        for viewmenu in viewsmenus:
+            found = False
+            for baseview in baseviews:
+                if viewmenu.name == baseview.__class__.__name__:
+                    found = True
+                    break
+            if menus.find(viewmenu.name):
+                found = True
+            if not found:
+                permissions = self.find_permissions_view_menu(viewmenu)
+                for permission in permissions:
+                    for role in roles:
+                        self.del_permission_role(role,permission)
+                    self.del_permission_view_menu(permission.permission.name,viewmenu.name)
+                self.del_view_menu(viewmenu.name)
+
+
+    """INTERFACE ABSTRACT METHODS
+        PRIMITIVES FOR USERS
+    """
+
+    def find_register_user(self,registration_hash):
+        raise NotImplementedError
+
+    def add_register_user(self,username,first_name,last_name,email,password='',hashed_password=''):
+        raise NotImplementedError
+
+    def del_register_user(self,register_user):
+        raise NotImplementedError
+
+    def get_user_by_id(self,pk):
+        raise NotImplementedError
+
+    def find_user(self,username=None,email=None):
+        raise NotImplementedError
+
+    def get_all_users(self):
+        raise NotImplementedError
+
+    def add_user(self,username,first_name,last_name,email,role,password=''):
+        raise NotImplementedError
+
+    def update_user(self,user):
+        raise NotImplementedError
+
+    def count_users(self):
+        raise NotImplementedError
+
+    #PRIMITIVES FOR ROLES
+    def find_role(self,name):
+        raise NotImplementedError
+
+    def add_role(self,name):
+        raise NotImplementedError
+
+    def get_all_roles(self):
+        raise NotImplementedError
+
+    #PRIMITIVES FOR PERMISSIONS
+    def get_public_permissions(self):
+        raise NotImplementedError
+
+    def find_permission(self,name):
+        raise NotImplementedError
+
+    def add_permission(self,name):
+        raise NotImplementedError
+
+    def del_permission(self,name):
+        raise NotImplementedError
+
+    def get_public_permissions(self):
+        raise NotImplementedError
+
+    #PRIMITIVES FOR VIEW MENU
+    def find_view_menu(self,name):
+        raise NotImplementedError
+
+    def get_all_view_menu(self):
+        raise NotImplementedError
+
+    def add_view_menu(self,name):
+        raise NotImplementedError
+
+    def del_view_menu(self,name):
+        raise NotImplementedError
+
+    #PERMISSION VIEW MENU
+    def find_permission_view_menu(self,permission_name,view_menu_name):
+        raise NotImplementedError
+
+    def find_permissions_view_menu(self,view_menu):
+        raise NotImplementedError
+
+    def add_permission_view_menu(self,permission_name,view_menu_name):
+        raise NotImplementedError
+
+    def del_permission_view_menu(self,permission_name,view_menu_name):
+        raise NotImplementedError
+
+    def exist_permission_on_views(self,lst,item):
+        raise NotImplementedError
+
+    def exist_permission_on_view(self,lst,permission,view_menu):
+        raise NotImplementedError
+
+    def add_permission_role(self,role,perm_view):
+        raise NotImplementedError
+
+    def del_permission_role(self,role,perm_view):
+        raise NotImplementedError
+
+    def load_user(self,pk):
+        return self.get_user_by_id(int(pk))
+
+    @staticmethod
+    def before_request():
+        g.user = current_user
+
+
+
+
 
