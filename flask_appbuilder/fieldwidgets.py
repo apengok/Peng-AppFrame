@@ -28,7 +28,7 @@ class DatePickerWidget(object):
 
 
 class DateTimePickerWidget(object):
-    data_template = ('<div class="input-group date appbuilder_datetime" id="datatimepicker">'
+    data_template = ('<div class="input-group date appbuilder_datetime" id="datetimepicker">'
             '<span class="input-group-addon"><i class="fa fa-calendar cursor-hand"></i>'
             '</span>'
             '<input class="form-control" data-format="yyyy-MM-dd hh:mm:ss" %(text)s/>'
@@ -126,7 +126,7 @@ class Select2SlaveAJAXWidget(object):
         kwargs.setdefault('name',field.name)
         kwargs.setdefault('endpoint',self.endpoint)
         kwargs.setdefault('master_id',self.master_id)
-        kwargs.setdefault('sytle',self.style)
+        kwargs.setdefault('style',self.style)
         input_classes = 'input-group my_select2_ajax'
         if self.extra_classes:
             input_classes = input_classes + ' ' + self.extra_classes
@@ -160,7 +160,7 @@ class Select2Widget(widgets.Select):
         kwargs['style'] = self.style
         kwargs['data-placeholder'] = _('Select Value')
         if 'name_' in kwargs:
-            filed.name = kwargs['name_']
+            field.name = kwargs['name_']
         return super(Select2Widget,self).__call__(field,**kwargs)
 
 

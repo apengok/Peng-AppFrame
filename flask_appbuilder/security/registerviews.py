@@ -90,7 +90,7 @@ class BaseRegisterUser(PublicFormView):
                 first_name=reg.first_name,
                 last_name=reg.last_name,
                 role=self.appbuilder.sm.find_role(
-                    self.appbuilder.sm.auth_user_rigistration_role),
+                    self.appbuilder.sm.auth_user_registration_role),
                 hashed_password=reg.password):
             flash(as_unicode(self.error_message),'danger')
             return redirect(self.appbuilder.get_url_for_index)
@@ -174,7 +174,7 @@ class RegisterUserOIDView(BaseRegisterUser):
         """
         if request.args.get('openid_complete') != u'yes':
             return f(False)
-        consumer = Consumer(SessionWrapper(self),oid.store_fctory())
+        consumer = Consumer(SessionWrapper(self),oid.store_factory())
         openid_response = consumer.complete(request.args.to_dict(),oid.get_current_url())
         if openid_response.status == SUCCESS:
             return self.after_login(OpenIDResponse(openid_response,[]))
@@ -202,7 +202,7 @@ class RegisterUserOAuthView(BaseRegisterUser):
 
     form = RegisterUserOIDForm
 
-    def form_get(self.form):
+    def form_get(self,form):
         self.add_form_unique_validations(form)
         #fills the register form with the collected data from OAuth
         form.username.data = request.args.get('username','')

@@ -20,7 +20,7 @@ def fill_gender():
 
 
 class ContactModelView(ModelView):
-    datemodel = SQLAInterface(Contact)
+    datamodel = SQLAInterface(Contact)
 
     list_columns = ['name','personal_celphone','birthday','contact_group.name']
 
@@ -35,7 +35,7 @@ class ContactModelView(ModelView):
 
     add_fieldsets = [
             ('Summary',{'fields':['name','gender','contact_group']}),
-            {'Personal Info',{'fields':[
+            ('Personal Info',{'fields':[
                 'address','birthday','personal_phone','personal_celphone'],'expanded':False}),
         ]
 
@@ -89,7 +89,7 @@ class ContactTimeChartView(GroupByChartView):
                 'series':[(aggregate_count,'group')]
             },
             {
-                'group','year',
+                'group':'year',
                 'formatter':pretty_year,
                 'series':[(aggregate_count,'group')]
             }

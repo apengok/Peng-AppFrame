@@ -6,24 +6,37 @@ from sqlalchemy.engine.reflection import Inspector
 from werkzeug.security import generate_password_hash
 from .models import User,Permission,PermissionView,RegisterUser,ViewMenu,Role
 from ..manager import BaseSecurityManager
-from ..models.sqla.interface import SQLAInterface
-from ..models.sqla import Base
-from ..import const as c
+from ...models.sqla.interface import SQLAInterface
+from ...models.sqla import Base
+from ...import const as c
 
 log = logging.getLogger(__name__)
 
 
 class SecurityManager(BaseSecurityManager):
+    """
+        Responsible for authentication, registering security views,
+        role and permission auto management
 
+        If you want to change anything just inherit and override, then
+        pass your own security manager to AppBuilder.
+    """
     user_model = User
+    """ Override to set your own User Model """
     role_model = Role
+    """ Override to set your own Role Model """
     permission_model = Permission
     viewmenu_model = ViewMenu
     permissionview_model = PermissionView
     registeruser_model = RegisterUser
 
-    def __init__(self,appbuilder):
-        super(SecurityManager,self).__init__(appbuilder)
+    def __init__(self, appbuilder):
+        """
+            SecurityManager contructor
+            param appbuilder:
+                F.A.B AppBuilder main object
+        """
+        super(SecurityManager, self).__init__(appbuilder)
         user_datamodel = SQLAInterface(self.user_model)
         if self.auth_type == c.AUTH_DB:
             self.userdbmodelview.datamodel = user_datamodel
@@ -59,7 +72,7 @@ class SecurityManager(BaseSecurityManager):
         try:
             engine = self.get_session.get_bind(mapper=None,clause=None)
             inspector = Inspector.from_engine(engine)
-            if 'ab_user' not in inspector.get_table_name():
+            if 'ab_user' not in inspector.get_table_names():
                 log.info(c.LOGMSG_INF_SEC_NO_DB)
                 Base.metadata.create_all(engine)
                 log.info(c.LOGMSG_INF_SEC_ADD_DB)
@@ -68,11 +81,17 @@ class SecurityManager(BaseSecurityManager):
             log.error(c.LOGMSG_ERR_SEC_CREATE_DB.format(str(e)))
             exit(1)
 
-    def find_register_user(self,registraion_hash):
+    def find_register_user(self, registration_hash):
         return self.get_session.query(self.registeruser_model).filter(
-                self.registeruser_model.registraion_hash == registraion_hash).scalar()
+            self.registeruser_model.registration_hash == registration_hash).scalar()
 
-    def add_register_user(self,username,first_name,last_name,email,password='',hashed_password=''):
+    def add_register_user(self, username, first_name, last_name, email,
+                         password='', hashed_password=''):
+        """
+            Add a registration request for the user.
+
+            :rtype : RegisterUser
+        """
         register_user = self.registeruser_model()
         register_user.username = username
         register_user.email = email
@@ -133,7 +152,7 @@ class SecurityManager(BaseSecurityManager):
             log.error(c.LOGMSG_ERR_SEC_ADD_USER.format(str(e)))
             return False
 
-    def count_user(self):
+    def count_users(self):
         return self.get_session.query(func.count('*')).select_from(self.user_model).scalar()
 
     def update_user(self,user):
@@ -161,7 +180,7 @@ class SecurityManager(BaseSecurityManager):
                 log.info(c.LOGMSG_INF_SEC_ADD_ROLE.format(name))
                 return role
             except Exception as e:
-                log.error(c.LOGMSG_INF_SEC_ADD_ROLE.format(name))
+                log.error(c.LOGMSG_ERR_SEC_ADD_ROLE.format(str(e)))
                 self.get_session.rollback()
         return role
 
@@ -262,7 +281,8 @@ class SecurityManager(BaseSecurityManager):
             pv = self.find_permission_view_menu(permission_name,view_menu_name)
             self.get_session.delete(pv)
             self.get_session.commit()
-            pv = self.get_session.query(self.permission_model).filter_by(permission=pv.permission).all()
+            # if no more permission on permission view, delete permission
+            pv = self.get_session.query(self.permissionview_model).filter_by(permission=pv.permission).all()
             if not pv:
                 self.del_permission(pv.permission.name)
             log.info(c.LOGMSG_INF_SEC_DEL_PERMVIEW.format(permission_name,view_menu_name))
@@ -288,13 +308,21 @@ class SecurityManager(BaseSecurityManager):
                 role.permissions.append(perm_view)
                 self.get_session.merge(role)
                 self.get_session.commit()
-                log.info(c.LOGMSG_INF_SEC_ADD_PERMROLE.format(str(perm_viw),role.name))
+                log.info(c.LOGMSG_INF_SEC_ADD_PERMROLE.format(str(perm_view),role.name))
             except Exception as e:
                 log.error(c.LOGMSG_ERR_SEC_ADD_PERMROLE.format(str(e)))
                 self.get_session.rollback()
 
-    def del_permission_role(self,role,perm_view):
-        if perm_viw in role.permissions:
+    def del_permission_role(self, role, perm_view):
+        """
+            Remove permission-ViewMenu object to Role
+
+            :param role:
+                The role object
+            :param perm_view:
+                The PermissionViewMenu object
+        """
+        if perm_view in role.permissions:
             try:
                 role.permissions.remove(perm_view)
                 self.get_session.merge(role)

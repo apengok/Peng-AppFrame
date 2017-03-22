@@ -67,6 +67,7 @@ class User(Document):
     email = StringField(max_length=64,required=True,unique=True)
     last_login = DateTimeField()
     login_count = IntField()
+    fail_login_count = IntField()
     roles = ListField(ReferenceField(Role))
     created_on = DateTimeField(default=datetime.datetime.now)
     changed_on = DateTimeField(default=datetime.datetime.now)

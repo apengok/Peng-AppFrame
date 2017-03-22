@@ -1,0 +1,172 @@
+# Chinese translations for PROJECT.
+# Copyright (C) 2017 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2017-03-22 14:31+0800\n"
+"PO-Revision-Date: 2017-03-22 14:34+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh\n"
+"Language-Team: zh <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.3.4\n"
+
+#: fields.py:138 fields.py:140 fields.py:192 fields.py:199
+msgid "Not a valid choice"
+msgstr ""
+
+#: fieldwidgets.py:161 fieldwidgets.py:182
+msgid "Select Value"
+msgstr ""
+
+#: messages.py:11 templates/appbuilder/general/charts/chart.html:8
+#: templates/appbuilder/general/charts/jsonchart.html:8
+#: templates/appbuilder/general/model/list.html:7
+msgid "Search"
+msgstr ""
+
+#: messages.py:12
+msgid "Back"
+msgstr ""
+
+#: messages.py:13
+msgid "Save"
+msgstr ""
+
+#: messages.py:14
+msgid "This field is required."
+msgstr ""
+
+#: messages.py:15
+msgid "Not a valid date value"
+msgstr ""
+
+#: messages.py:16 templates/appbuilder/general/widgets/base_list.html:36
+#: templates/appbuilder/general/widgets/list_carousel.html:51
+#: templates/appbuilder/general/widgets/list_master.html:16
+msgid "No records found"
+msgstr ""
+
+#: upload.py:118 upload.py:160
+msgid "Invalid file extension"
+msgstr ""
+
+#: validators.py:31
+msgid "Already exists."
+msgstr ""
+
+#: models/group.py:27
+msgid "Count of"
+msgstr ""
+
+#: models/group.py:36
+msgid "Sum of"
+msgstr ""
+
+#: models/group.py:41
+msgid "Avg. of"
+msgstr ""
+
+#: security/manager.py:325 security/manager.py:329
+msgid "List Users"
+msgstr ""
+
+#: security/manager.py:326
+msgid "Security"
+msgstr ""
+
+#: security/manager.py:333
+msgid "User's Statistics"
+msgstr ""
+
+#: security/manager.py:337
+msgid "User Registrations"
+msgstr ""
+
+#: security/manager.py:341
+msgid "Base Permission"
+msgstr ""
+
+#: security/manager.py:343
+msgid "Views/Menus"
+msgstr ""
+
+#: security/manager.py:345
+msgid "Permission on Views/Menus"
+msgstr ""
+
+#: security/views.py:52
+msgid "Show Permissions on Views/Menus"
+msgstr ""
+
+#: templates/appbuilder/baselib.html:114
+#: templates/appbuilder/navbar_right.html:38
+msgid "Profile"
+msgstr ""
+
+#: templates/appbuilder/baselib.html:115
+#: templates/appbuilder/navbar_right.html:41
+msgid "Logout"
+msgstr ""
+
+#: templates/appbuilder/baselib.html:120
+#: templates/appbuilder/navbar_right.html:46
+msgid "Login"
+msgstr ""
+
+#: templates/appbuilder/general/security/activation.html:5
+#: templates/appbuilder/index.html:4
+msgid "Welcome"
+msgstr ""
+
+#: templates/appbuilder/general/confirm.html:6
+msgid "User confirmation needed"
+msgstr ""
+
+#: templates/appbuilder/general/model/edit.html:9
+msgid "Detail"
+msgstr ""
+
+#: templates/appbuilder/general/security/activation.html:7
+msgid "Your user is activated you can now proceed to login"
+msgstr ""
+
+#: templates/appbuilder/general/security/login_oid.html:83
+msgid "Click on your OpenID provider below"
+msgstr ""
+
+#: templates/appbuilder/general/security/login_oid.html:94
+msgid "Or enter your openID here"
+msgstr ""
+
+#: templates/appbuilder/general/security/login_oid.html:98
+msgid "Pease choose a provider"
+msgstr ""
+
+#: templates/appbuilder/general/security/login_oid.html:100
+msgid "Enter your openID username"
+msgstr ""
+
+#: templates/appbuilder/general/security/login_oid.html:111
+msgid "Sign In"
+msgstr ""
+
+#: templates/appbuilder/general/security/login_oid.html:113
+msgid "If your not already a user,please register"
+msgstr ""
+
+#: templates/appbuilder/general/security/login_oid.html:114
+msgid "Register"
+msgstr ""
+
+#: templates/appbuilder/general/security/register_oauth.html:12
+msgid "Sign in using:"
+msgstr ""
+

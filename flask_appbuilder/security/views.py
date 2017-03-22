@@ -41,7 +41,7 @@ class ViewMenuModelView(ModelView):
     add_title = lazy_gettext('Add View Menu')
     edit_title = lazy_gettext('Edit View Menu')
 
-    label_columns = {'name':lage_gettext('Name')}
+    label_columns = {'name':lazy_gettext('Name')}
 
 
 class PermissionViewModelView(ModelView):
@@ -49,7 +49,7 @@ class PermissionViewModelView(ModelView):
     base_permissions = ['can_list']
 
     list_title = lazy_gettext('List Permissions on Views/Menus')
-    show_title = lazy-gettext('Show Permissions on Views/Menus')
+    show_title = lazy_gettext('Show Permissions on Views/Menus')
     add_title = lazy_gettext('Add Permissions on Views/Menus')
     edit_title = lazy_gettext('Edit Permissions on Views/menus')
 
@@ -223,7 +223,7 @@ class UserDBModelView(UserModelView):
     @has_access
     def userinfo(self):
         actions = {}
-        actions['resetmypasswords'] = self.actions.get('resetmypassword')
+        actions['resetmypassword'] = self.actions.get('resetmypassword')
         actions['userinfoedit'] = self.actions.get('userinfoedit')
 
         item = self.datamodel.get(g.user.id,self._base_filters)
@@ -244,7 +244,7 @@ class UserDBModelView(UserModelView):
         return redirect(url_for(self.appbuilder.sm.resetpasswordview.__name__ + '.this_form_get',pk=item.id))
 
     def pre_update(self,item):
-        item.changed_on = datetiem.datetime.now()
+        item.changed_on = datetime.datetime.now()
         item.changed_by_fk = g.user.id
 
     def pre_add(self,item):
@@ -383,7 +383,7 @@ class AuthLDAPView(AuthView):
         if not user:
             http_return_code = 401
             response = make_response(jsonify({'message':'Login Failed',
-                'serverity':'critical'}),http_return_code)
+                'severity':'critical'}),http_return_code)
         else:
             login_user(user,remember=False)
             http_return_code = 201
@@ -479,7 +479,7 @@ class AuthOAuthView(AuthView):
         else:
             log.debug("User info retrieved from {0}:{1}".format(provider,userinfo))
             #Is this Authorization to register a new user?
-            if session.pop('register','None'):
+            if session.pop('register',None):
                 return redirect(self.appbuilder.sm.registeruseroauthview.get_default_url(**userinfo))
             user = self.appbuilder.sm.auth_user_oauth(userinfo)
 

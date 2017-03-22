@@ -1,7 +1,7 @@
 from flask_appbuilder.widgets import RenderTemplateWidget
 
 class ChartWidget(RenderTemplateWidget):
-    tempalte = 'appbuilder/general/widgets/chart.html'
+    template = 'appbuilder/general/widgets/chart.html'
 
 
 class DirectChartWidget(RenderTemplateWidget):

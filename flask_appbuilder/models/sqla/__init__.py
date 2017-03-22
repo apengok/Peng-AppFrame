@@ -2,7 +2,7 @@ import logging
 import re
 import datetime
 from sqlalchemy.ext.declarative import declarative_base
-from flask_sqlalchemy import SQLAlchemy,_BounddeclarativeMeta,_QueryProperty
+from flask_sqlalchemy import SQLAlchemy,_BoundDeclarativeMeta,_QueryProperty
 
 
 try:
@@ -84,7 +84,7 @@ class Model(object):
         result = dict()
         for key in self.__mapper__.c.keys():
             col = getattr(self,key)
-            if isinstance(col,datetime.datetiem) or isinstance(col,datetime.date):
+            if isinstance(col,datetime.datetime) or isinstance(col,datetime.date):
                 col = col.isoformat()
             result[key] = col
 

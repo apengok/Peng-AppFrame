@@ -12,7 +12,7 @@ from datetime import date,datetime
 class PKMissingException(Exception):
     def __init__(self,model_name=''):
         message = 'Please set one primary key on:{0}'.format(model_name)
-        super(PKMissingExcption,self).__init__(self,message)
+        super(PKMissingException,self).__init__(self,message)
 
 
 class GenericColumn(object):
@@ -245,7 +245,7 @@ class GenericSession(object):
         return value not in getattr(item,col_name)
 
     def equal(self,col_name,value):
-        self._filter_cmd.append((self._equal,col_name,value))
+        self._filters_cmd.append((self._equal,col_name,value))
         return self
 
     def _equal(self,item,col_name,value):
@@ -322,8 +322,8 @@ class PSModel(GenericModel):
     CMD = GenericColumn(str)
 
 
-clss PSSession(GenericSession):
-    regexp = "(\w+) +(\w+) +(\w+) +(\w+) +(\w+:\w+|\w+)(\?|tty\w+) +(\w+:\w+) +(.+)\n"
+class PSSession(GenericSession):
+    regexp = "(\w+) +(\w+) +(\w+) +(\w+) +(\w+:\w+|\w+) (\?|tty\w+) +(\w+:\w+:\w+) +(.+)\n"
 
     def add_object(self,line):
         import re
@@ -332,9 +332,9 @@ clss PSSession(GenericSession):
         if group:
             model = PSModel()
             model.UID = group[0][0]
-            model.PID = group[0][1]
-            model.PPID = group[0][2]
-            model.C = group[0][3]
+            model.PID = int(group[0][1])
+            model.PPID = int(group[0][2])
+            model.C = int(group[0][3])
             model.STIME = group[0][4]
             model.TTY = group[0][5]
             model.TIME = group[0][6]

@@ -1,2 +1,2 @@
 #for Retro compatibility purposes
-from .sqla.interface import SQLAinterface as SQLAModel
+from .sqla.interface import SQLAInterface as SQLAModel

@@ -99,5 +99,5 @@ class Menu(object):
         if menu_item:
             menu_item.childs.append(MenuItem("-"))
         else:
-            raise Exception("Menu separator dows not have correct category {}".format(category))
+            raise Exception("Menu separator does not have correct category {}".format(category))
 

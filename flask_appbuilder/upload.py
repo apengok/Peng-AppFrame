@@ -39,7 +39,7 @@ class BS3FileUploadFieldWidget(object):
                 'marker':'_%s-delete' % field.name
                 }
 
-        template = self.data_template if feild.data else self.empty_template
+        template = self.data_template if field.data else self.empty_template
 
         return HTMLString(template % {
             'text':html_params(type='text',value=field.data),

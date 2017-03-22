@@ -2,7 +2,7 @@ import datetime
 import logging
 from functools import reduce
 from flask_babel import lazy_gettext
-from .filters import Fileters
+from .filters import Filters
 
 
 log = logging.getLogger(__name__)
@@ -21,11 +21,11 @@ class BaseInterface(object):
 
     """ Messages to display on CRUD Events"""
     add_row_message = lazy_gettext('Added Row')
-    edit_row_message = lazy_gettext('Changged Row')
+    edit_row_message = lazy_gettext('Changed Row')
     delete_row_message = lazy_gettext('Deleted Row')
     delete_integrity_error_message = lazy_gettext('Associated data exists,please delete them first')
     add_integrity_error_message = lazy_gettext('Integrity error,probably unique constraint')
-    edit_integrity_error_message = lazy_gettext('Integrity error<Plug>PeepOpenrobably unique constraint')
+    edit_integrity_error_message = lazy_gettext('Integrity error,probably unique constraint')
     general_error_message = lazy_gettext('General Error')
 
     """ Tuple with message and text with severity type ex:("Added Row","info")"""
@@ -132,7 +132,7 @@ class BaseInterface(object):
         return False
 
 
-    def is_gridfs_filter(self,col_name):
+    def is_gridfs_file(self,col_name):
         return False
 
 
@@ -168,7 +168,7 @@ class BaseInterface(object):
         return False
 
 
-    def is_datetiem(self,col_name):
+    def is_datetime(self,col_name):
         return False
 
 
@@ -290,7 +290,7 @@ class BaseInterface(object):
         raise NotImplementedError
 
 
-    def get_column_list(self):
+    def get_columns_list(self):
         """ Returns a list of all the columns names"""
         return []
 

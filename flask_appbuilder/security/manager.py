@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash,check_password_hash
 from flask_login import LoginManager,current_user
 from flask_openid import OpenID
 from flask_babel import lazy_gettext as _
-from .views import AuthDBView,AuthOIDView,ResetMyPasswordView,AuthLDAPView,AuthOAuthView,AuthRemoteUserView,ResetPasswordView,UserDBModelView,UserLDAPModelView,UserOIDModelView,UserOAuthModelView,UserRemoteUserModelView,RoleMOdelView,PermissionViewModelView,ViewMenuModelView,PermissionModelView,UserStatsChartView,RegisterUserModelView,UserInfoEditView
+from .views import AuthDBView,AuthOIDView,ResetMyPasswordView,AuthLDAPView,AuthOAuthView,AuthRemoteUserView,ResetPasswordView,UserDBModelView,UserLDAPModelView,UserOIDModelView,UserOAuthModelView,UserRemoteUserModelView,RoleModelView,PermissionViewModelView,ViewMenuModelView,PermissionModelView,UserStatsChartView,RegisterUserModelView,UserInfoEditView
 from .registerviews import RegisterUserDBView,RegisterUserOIDView,RegisterUserOAuthView
 from ..basemanager import BaseManager
 from ..const import AUTH_OID,AUTH_DB,AUTH_LDAP,AUTH_REMOTE_USER,AUTH_OAUTH,\
@@ -23,22 +23,22 @@ class AbstractSecurityManager(BaseManager):
     """
     def add_permissions_view(self,base_permissions,view_menu):
 
-        raise NotImplementdError
+        raise NotImplementedError
 
     def add_permissions_menu(self,view_menu_name):
-        raise NotImplementdError
+        raise NotImplementedError
 
     def register_views(self):
-        raise NotImplementdError
+        raise NotImplementedError
 
     def is_item_public(self,permission_name,view_name):
-        raise NotImplementdError
+        raise NotImplementedError
 
     def has_access(self,permission_name,view_name):
-        raise NotImplementdError
+        raise NotImplementedError
 
     def security_cleanup(self,baseviews,menus):
-        raise NotImplementdError
+        raise NotImplementedError
 
 
 def _oauth_tokengetter(token=None):
@@ -54,7 +54,7 @@ class BaseSecurityManager(AbstractSecurityManager):
     lm = None
     """Flask-Login LoginManager"""
     oid = None
-    """ Flask-OPenID OpenID"""
+    """ Flask-OpenID OpenID"""
     oauth = None
     oauth_remotes = None
     oauth_tokengetter = _oauth_tokengetter
@@ -103,7 +103,7 @@ class BaseSecurityManager(AbstractSecurityManager):
         app.config.setdefault('AUTH_TYPE',AUTH_DB)
 
         app.config.setdefault('AUTH_USER_REGISTRATION',False)
-        app.config.setdefault('AUTH_USER_REGISTTAION_ROLE',self.auth_role_public)
+        app.config.setdefault('AUTH_USER_REGISTRATION_ROLE',self.auth_role_public)
 
         #LDAP config
         if self.auth_type == AUTH_LDAP:
@@ -114,7 +114,7 @@ class BaseSecurityManager(AbstractSecurityManager):
             app.config.setdefault('AUTH_LDAP_APPEND_DOMAIN','')
             app.config.setdefault('AUTH_LDAP_BIND_PASSWORD','')
             app.config.setdefault('AUTH_LDAP_ALLOW_SELF_SIGNED',False)
-            app.config.setdefault('AUTH_LDAP_UID_FAILED','uid')
+            app.config.setdefault('AUTH_LDAP_UID_FIELD','uid')
             app.config.setdefault('AUTH_LDAP_FIRSTNAME_FIELD','givenName')
             app.config.setdefault('AUTH_LDAP_LASTNAME_FIELD','sn')
             app.config.setdefault('AUTH_LDAP_EMAIL_FIELD','mail')
@@ -128,8 +128,8 @@ class BaseSecurityManager(AbstractSecurityManager):
             for _provider in self.oauth_providers:
                 provider_name = _provider['name']
                 log.debug("OAuth providers init {0}".format(provider_name))
-                obj_provider = self.oauth_remote_app(provider_name,**_provider['remote_app'])
-                obj_provider._tokegetter = self.oauth_tokengetter
+                obj_provider = self.oauth.remote_app(provider_name,**_provider['remote_app'])
+                obj_provider._tokengetter = self.oauth_tokengetter
                 if not self.oauth_user_info:
                     self.oauth_user_info = self.get_oauth_user_info
                 self.oauth_remotes[provider_name] = obj_provider
@@ -361,7 +361,7 @@ class BaseSecurityManager(AbstractSecurityManager):
         if not user.login_count:
             user.login_count = 0
         if not user.fail_login_count:
-            self.fail_login_count = 0
+            user.fail_login_count = 0
         if success:
             user.login_count += 1
             user.fail_login_count = 0
@@ -393,7 +393,7 @@ class BaseSecurityManager(AbstractSecurityManager):
                 ldap.SCOPE_SUBTREE,
                 filter_str,
                 [self.auth_ldap_firstname_field,
-                    self.autho_ldap_lastname_field,
+                    self.auth_ldap_lastname_field,
                     self.auth_ldap_email_field])
         if user:
             if not user[0][0]:
@@ -407,7 +407,7 @@ class BaseSecurityManager(AbstractSecurityManager):
                 indirect_password = self.auth_ldap_bind_password
                 log.debug("LDAP indirect bind with:{0}".format(indirect_user))
                 con.bind_s(indirect_user,indirect_password)
-                log.dubug("LDAP BIND indirect OK")
+                log.debug("LDAP BIND indirect OK")
                 user = self._search_ldap(ldap,con,username)
                 if user:
                     log.debug("LDAP got User {0}".format(user))
@@ -534,7 +534,7 @@ class BaseSecurityManager(AbstractSecurityManager):
     def has_access(self,permission_name,view_name):
         if current_user.is_authenticated():
             return self._has_view_access(g.user,permission_name,view_name)
-        else
+        else:
             return self.is_item_public(permission_name,view_name)
 
     def add_permissions_view(self,base_permissions,view_menu):

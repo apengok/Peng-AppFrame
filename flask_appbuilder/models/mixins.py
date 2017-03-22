@@ -15,14 +15,14 @@ log = logging.getLogger(__name__)
 
 class FileColumn(types.TypeDecorator):
     """
-        Extends SQLALchemy to support and mostly identify a File Column
+        Extends SQLAlchemy to support and mostly identify a File Column
     """
     impl = types.Text
 
 
 class ImageColumn(types.TypeDecorator):
     """
-        Extends SQLALchemy to support and mostly identify an Image Column
+        Extends SQLAlchemy to support and mostly identify an Image Column
     """
     impl = types.Text
 
@@ -69,7 +69,7 @@ class AuditMixin(object):
     def get_user_id(cls):
         try:
             return g.user.id
-        except Exceptiion as e:
+        except Exception as e:
             #log.warning("AuditMixin Get User ID {0}".format(str(e)))
             return None
 

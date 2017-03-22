@@ -3,9 +3,10 @@ from flask import flash
 from . import filters
 from ..base import BaseInterface
 from ..._compat import as_unicode
-from ...const import LOGMSG_ERR_ADD_GENERIC,LOGMSG_ERR_DBI_EDIT_GENERIC,LOGMSG_ERR_DBI_DEL_GENERIC,LOGMSG_WAR_DBI_ADD_INTEGRITY,LOGMSG_WAR_DBI_EDIT_INTEGRITY,LOGMSG_WAR_DBI_DEL_INTEGRITY
-from mongoengine.fields import StringField,IntField,BooleanField,FloatField,DateTimeField,ReferenceField,ListField,FileField,ImageField,ObjectIdField
-
+from ...const import LOGMSG_ERR_DBI_ADD_GENERIC, LOGMSG_ERR_DBI_EDIT_GENERIC, LOGMSG_ERR_DBI_DEL_GENERIC, \
+                     LOGMSG_WAR_DBI_ADD_INTEGRITY, LOGMSG_WAR_DBI_EDIT_INTEGRITY, LOGMSG_WAR_DBI_DEL_INTEGRITY
+from mongoengine.fields import StringField, IntField, BooleanField, FloatField, \
+    DateTimeField, ReferenceField, ListField, FileField, ImageField, ObjectIdField
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class MongoEngineInterface(BaseInterface):
         count = objs.count()
 
         if order_column != '':
-            if hasattr(getattr(self.ojb,order_column),'_col_name'):
+            if hasattr(getattr(self.obj,order_column),'_col_name'):
                 order_column = getattr(getattr(self.obj,order_column),'_col_name')
             if order_direction == 'asc':
                 objs = objs.order_by('-{0}'.format(order_column))
@@ -45,7 +46,7 @@ class MongoEngineInterface(BaseInterface):
                 objs = objs.order_by('+{0}'.format(order_column))
 
         if page_size is None:
-            if pate is not None:
+            if page is not None:
                 log.error('Attempting to get page %s but page_size is undefined'%page)
             if count > 100:
                 log.warn('Retrieving %s %s items from DB'%(count,str(self.obj)))

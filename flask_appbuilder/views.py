@@ -68,7 +68,7 @@ class SimpleFormView(BaseFormView):
                 )
 
 
-class PublishFormView(BaseFormView):
+class PublicFormView(BaseFormView):
 
     @expose("/form",methods=['GET'])
     def this_form_get(self):
@@ -143,8 +143,8 @@ class RestCRUDView(BaseCRUDView):
 
         #Prepares the form with the search fields make it JSON serializable
         form_fields = {}
-        search_fields = {}
-        dict_fields = self._filters.get_search_filters()
+        search_filters = {}
+        dict_filters = self._filters.get_search_filters()
         form = self.search_form.refresh()
         for col in self.search_columns:
             form_fields[col] = form[col]()
@@ -163,7 +163,7 @@ class RestCRUDView(BaseCRUDView):
                 search_filters=search_filters,
                 search_fields=form_fields,
                 modelview_urls=modelview_urls)
-        response = make_response(rel_json,200)
+        response = make_response(ret_json,200)
         response.headers['Content-Type'] = "application/json"
         return response
 
@@ -220,7 +220,7 @@ class RestCRUDView(BaseCRUDView):
 
     @expose_api(name='create',url='/api/create',methods=['POST'])
     @has_access_api
-    @permission_name('create')
+    @permission_name('add')
     def api_create(self):
         is_valid_form = True
         get_filter_args(self._filters)
@@ -241,10 +241,12 @@ class RestCRUDView(BaseCRUDView):
             is_valid_form = False
 
         if is_valid_form:
-            response = make_response(jsonify({'message':self.datamodel.message[0],
-                'severity':'warning'}),http_return_code)
+            response = make_response(jsonify({'message': self.datamodel.message[0],
+                                              'severity': self.datamodel.message[1]}), http_return_code)
         else:
-            response = make_response(jsonify({'message':'Invalid form','severity':'warning'}),500)
+            # TODO return dict with errors
+            response = make_response(jsonify({'message': 'Invalid form',
+                                              'severity': 'warning'}), 500)
         return response
 
     @expose_api(name='update',url='/api/update/<pk>',methods=['PUT'])
@@ -468,12 +470,12 @@ class MasterDetailView(BaseCRUDView):
     master_div_width = 2
     """ set to configure bootstrap class for master grid size"""
 
-    @expose('/list')
+    @expose('/list/')
     @expose('/list/<pk>')
     @has_access
     def list(self,pk=None):
         pages = get_page_args()
-        page_size = get_page_size_args()
+        page_sizes = get_page_size_args()
         orders = get_order_args()
 
         widgets = self._list()
@@ -506,6 +508,9 @@ class MultipleView(BaseView):
 
     def get_uninit_inner_views(self):
         return self.views
+
+    def get_init_inner_views(self):
+        return self._views
 
     @expose('/list/')
     @has_access
@@ -583,9 +588,9 @@ class CompactCRUDMixin(BaseCRUDView):
     def add(self):
         widgets = self._add()
         if not widgets:
-            self.set_key('session_form_action','')
-            self.set_key('session_form_widget',None)
-            return redirect(request.referer)
+            self.set_key('session_form_action', '')
+            self.set_key('session_form_widget', None)
+            return redirect(request.referrer)
         else:
             self.set_key('session_form_widget','add')
             self.set_key('session_form_action',request.full_path)

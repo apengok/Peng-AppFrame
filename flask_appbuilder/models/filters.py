@@ -17,7 +17,7 @@ class BaseFilter(object):
     name = ''
     is_related_view = False
     """
-        Stes this filter to a special kind for related views.
+        Sets this filter to a special kind for related views.
         If true this filter was not set by the user
     """
 
@@ -115,7 +115,7 @@ class Filters(object):
         search_columns = search_columns or []
         self.filter_converter = filter_converter
         self.datamodel = datamodel
-        self.clear_filterss()
+        self.clear_filters()
         if search_columns:
             self._search_filters = self._get_filters(search_columns)
             self._all_filters = self._get_filters(datamodel.get_columns_list())
@@ -143,9 +143,11 @@ class Filters(object):
         self.filters.append(filter_instance)
         self.values.append(value)
 
+    def add_filter_index(self, column_name, filter_instance_index, value):
+        self._add_filter(self._all_filters[column_name][filter_instance_index], value)
 
-    def add_filter_index(self,column_name,filter_instance_index,value):
-        self._add_filter(self._all_filters[column_name][filter_instance_index],value)
+    def add_filter(self, column_name, filter_class, value):
+        self._add_filter(filter_class(column_name, self.datamodel), value)
         return self
 
 
@@ -165,7 +167,7 @@ class Filters(object):
         """Creates a new filters class with active filters joined"""
         retfilters = Filters(self.filter_converter,self.datamodel)
         retfilters.filters = self.filters + filters.filters
-        retfilters.value = self.values + filters.values
+        retfilters.values = self.values + filters.values
         return retfilters
 
 
@@ -184,7 +186,7 @@ class Filters(object):
 
     def get_relation_cols(self):
         """
-            Returns the filter active FIlterRelation cols
+            Returns the filter active FilterRelation cols
         """
         retlst = []
         for flt,value in zip(self.filters,self.values):

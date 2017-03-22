@@ -1,4 +1,4 @@
-from flsk import request,url_for
+from flask import request,url_for
 
 
 def app_template_filter(filter_name=''):
@@ -110,8 +110,8 @@ class TemplateFilters(object):
         return getattr(obj,item)
 
     @app_template_filter('is_menu_visible')
-    def is_menu_visible_filter(self,item):
-        return self.security_manager.has_access("menu_access",item.name)
+    def is_menu_visible(self, item):
+        return self.security_manager.has_access("menu_access", item.name)
 
     @app_template_filter('is_item_visible')
     def is_item_visible(self,permission,item):

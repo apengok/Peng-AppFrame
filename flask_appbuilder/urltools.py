@@ -55,8 +55,14 @@ def get_page_args():
             pages[re_match[0]] = int(request.args.get(arg))
     return pages
 
+def get_page_size_args():
+    """
+        Get page size arguments, returns an int
+        { <VIEW_NAME>: PAGE_NUMBER }
 
-def get_page_size_arg():
+        Arguments are passed: psize_<VIEW_NAME>=<PAGE_SIZE>
+
+    """
     page_sizes = {}
     for arg in request.args:
         re_match = re.findall('psize_(.*)',arg)

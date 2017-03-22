@@ -21,7 +21,7 @@ class Permission(Model):
 class ViewMenu(Model):
     __tablename__ = 'ab_view_menu'
     id = Column(Integer,Sequence('ab_view_menu_id_seq'),primary_key=True)
-    name = Column(String(100),unique=True,unllable=False)
+    name = Column(String(100),unique=True,nullable=False)
 
     def __eq__(self,other):
         return (isinstance(other,self.__class__)) and (self.name == other.name)
@@ -34,7 +34,7 @@ class ViewMenu(Model):
 
 
 class PermissionView(Model):
-    __table__name__ = 'ab_permission_view'
+    __tablename__ = 'ab_permission_view'
     id = Column(Integer,Sequence('ab_permission_view_id_seq'),primary_key=True)
     permission_id = Column(Integer,ForeignKey('ab_permission.id'))
     permission = relationship("Permission")
@@ -82,7 +82,7 @@ class User(Model):
     login_count = Column(Integer)
     fail_login_count = Column(Integer)
     roles = relationship('Role',secondary=assoc_user_role,backref='user')
-    created_on = Column(DateTime,default=datetime,datetime.now,nullable=True)
+    created_on = Column(DateTime,default=datetime.datetime.now,nullable=True)
     changed_on = Column(DateTime,default=datetime.datetime.now,nullable=True)
 
     @declared_attr
@@ -122,7 +122,7 @@ class User(Model):
         return u'{0} {1}'.format(self.first_name,self.last_name)
 
     def __repr__(self):
-        return self.get_full_nae()
+        return self.get_full_name()
 
 
 class RegisterUser(Model):

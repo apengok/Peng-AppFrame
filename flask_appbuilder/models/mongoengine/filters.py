@@ -99,8 +99,8 @@ class FilterRelationManyToManyEqual(FilterRelation):
 class FilterEqualFunction(BaseFilter):
     name = "Filter view with a function"
 
-    def apply(self,query,value):
-        flt = {'%s'%self.column_name:func()}
+    def apply(self, query, func):
+        flt = {'%s' % self.column_name: func()}
         return query.filter(**flt)
 
 
@@ -115,14 +115,14 @@ class MongoEngineFilterConverter(BaseFilterConverter):
             ('is_string',[FilterEqual,
                         FilterNotEqual,
                         FilterStartsWith,
-                        FilterNotStartWith,
+                        FilterNotStartsWith,
                         FilterContains,
                         FilterNotContains]),
             ('is_boolean',[FilterEqual,FilterNotEqual]),
             ('is_datetime',[FilterEqual,
                         FilterNotEqual,
                         FilterGreater,
-                        FilterSmanller]),
+                        FilterSmaller]),
             ('is_integer',[FilterEqual,
                         FilterNotEqual,
                         FilterGreater,
@@ -130,5 +130,5 @@ class MongoEngineFilterConverter(BaseFilterConverter):
             ('is_float',[FilterEqual,
                         FilterNotEqual,
                         FilterGreater,
-                        FilterSmanller])
+                        FilterSmaller])
         )

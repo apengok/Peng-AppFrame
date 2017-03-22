@@ -131,7 +131,7 @@ class GroupByDateYear(BaseGroupBy):
 
 
 class GroupByDateMonth(BaseGroupBy):
-    def apply(self.data):
+    def apply(self,data):
         data = sorted(data,key=self.get_group_col)
         return [
                 [self.get_format_group_col(grouped),self.aggregate_func(items,self.aggregate_col)]
@@ -221,7 +221,7 @@ class BaseProcessData(object):
                 row[self.group_bys_cols[0]] = str(item[0])
             else:
                 for group_col_data,i in zip(item[0],enumerate(item[0])):
-                    ros[self.group_bys_col[i]] = str(group_col_data)
+                    row[self.group_bys_cols[i]] = str(group_col_data)
             for col_data,i in zip(item[1:],enumerate(item[1:])):
                 log.debug("{0},{1}".format(col_data,i))
                 key = self.aggr_by_cols[i].__name__ + self.aggr_by_cols[i]
@@ -236,15 +236,17 @@ class BaseProcessData(object):
     def to_json(self,data,labels=None):
         """
             Will return a dict with Google JSON structure for charts
-            The Google structure:
+
+            The Google structure::
+
                 {
-                    cols:[{id:<COL_NAME>,label:<LABEL FOR COL>,type:<COL TYPE>},...]
-                    rows:[{c:[v:<COL VALUE},...],...]
+                    cols: [{id:<COL_NAME>, label:<LABEL FOR COL>, type: <COL TYPE>}, ...]
+                    rows: [{c: [{v: <COL VALUE}, ...], ... ]
                 }
 
             :param data:
-            :param labels:dict with labels to include on Google JSON struct
-            :return:dict with Google JSON structure
+            :param labels: dict with labels to include on Google JSON strcut
+            :return: dict with Google JSON structure
         """
         labels = labels or dict()
         json_data = dict()

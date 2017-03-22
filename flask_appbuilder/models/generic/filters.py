@@ -36,7 +36,7 @@ class FilterEqual(BaseFilter):
 
 
 class FilterNotEqual(BaseFilter):
-    name = lazy_gettext('Not equal to')
+    name = lazy_gettext('Not Equal to')
 
     def apply(self,query,value):
         return query.not_equal(self.column_name,value)
@@ -65,7 +65,7 @@ class FilterStartsWith(BaseFilter):
 
 class GenericFilterConverter(BaseFilterConverter):
     """
-    Class for converting columns into a suppoerted list of filters specific for SQLAlchemy
+    Class for converting columns into a supported list of filters specific for SQLAlchemy
     """
     conversion_table = (('is_text',[FilterContains,FilterIContains,
                                              FilterNotContains,
@@ -78,7 +78,7 @@ class GenericFilterConverter(BaseFilterConverter):
                             FilterNotContains,
                             FilterEqual,
                             FilterNotEqual,
-                            FilterStartsWith)],
+                            FilterStartsWith]),
                         ('is_integer',[FilterEqual,
                             FilterNotEqual,
                             FilterGreater,

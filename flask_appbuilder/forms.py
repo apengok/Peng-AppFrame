@@ -4,8 +4,8 @@ from wtforms import (BooleanField,StringField,TextAreaField,IntegerField,FloatFi
         DateField,DateTimeField,DecimalField)
 from .fields import QuerySelectMultipleField,QuerySelectField
 
-from stforms import validators
-from .filedwidgets import (BS3TextAreaFieldWidget,
+from wtforms import validators
+from .fieldwidgets import (BS3TextAreaFieldWidget,
                         BS3TextFieldWidget,
                         DatePickerWidget,
                         DateTimePickerWidget,
@@ -46,7 +46,7 @@ class FieldConverter(object):
             ('is_numeric',DecimalField,BS3TextFieldWidget),
             ('is_float',FloatField,BS3TextFieldWidget),
             ('is_boolean',BooleanField,None),
-            ('is_date',DateField,DatePickWidget),
+            ('is_date',DateField,DatePickerWidget),
             ('is_datetime',DateTimeField,DateTimePickerWidget),
         )
 
@@ -107,8 +107,9 @@ class GeneralModelConverter(object):
     def _get_related_pk_func(self,col_name):
         return lambda obj:self.datamodel.get_related_interface(col_name).get_pk_value(obj)
 
-
-    def _convert_many_to_one(self,col_name,label,description,lst_validators,filter_rel_fileds,form_props):
+    def _convert_many_to_one(self, col_name, label, description,
+                             lst_validators, filter_rel_fields,
+                             form_props):
         """
             Creates a WTForm field for many to one related fields,
             will use a Select box based on a query.
@@ -122,27 +123,31 @@ class GeneralModelConverter(object):
             lst_validators.append(validators.DataRequired())
             allow_blank = False
         else:
-            lst_validators.append(validators.Optiional())
-        form_props[col_name] = QuerySelectField(label,
-                description=description,
-                query_func=query_func,
-                get_pk_func=get_pk_func,
-                allow_blank=allow_blank,
-                validators=lst_validators,
-                widget=Select2Widget(extra_classes=extra_classes))
+            lst_validators.append(validators.Optional())
+        form_props[col_name] = \
+            QuerySelectField(label,
+                             description=description,
+                             query_func=query_func,
+                             get_pk_func=get_pk_func,
+                             allow_blank=allow_blank,
+                             validators=lst_validators,
+                             widget=Select2Widget(extra_classes=extra_classes))
         return form_props
 
-
-    def _convert_many_to_many(self,col_name,label,description,lst_validators,filter_rel_fields,form_props):
-        query_func = self._get_related_query_func(col_name,filter_rel_fields)
+    def _convert_many_to_many(self, col_name, label, description,
+                              lst_validators, filter_rel_fields,
+                              form_props):
+        query_func = self._get_related_query_func(col_name, filter_rel_fields)
         get_pk_func = self._get_related_pk_func(col_name)
         allow_blank = True
-        form_props[col_name] = QueryslectMultipleField(label,
-                description=description,
-                query_func=query_func,
-                get_pk_func=get_pk_func,
-                validators=validators,
-                widget=Select2ManyWidget())
+        form_props[col_name] = \
+            QuerySelectMultipleField(label,
+                                     description=description,
+                                     query_func=query_func,
+                                    get_pk_func=get_pk_func,
+                                    allow_blank=allow_blank,
+                                     validators=lst_validators,
+                                     widget=Select2ManyWidget())
         return form_props
 
 
@@ -161,7 +166,7 @@ class GeneralModelConverter(object):
         if self.datamodel.is_unique(col_name):
             lst_validators.append(Unique(self.datamodel,col_name))
         default_value = self.datamodel.get_col_default(col_name)
-        fc = FieldConverter9self.datamodel,col_name,label,description,lst_validators,default=default_value)
+        fc = FieldConverter(self.datamodel,col_name,label,description,lst_validators,default=default_value)
         form_props[col_name] = fc.convert()
         return form_props
 
@@ -177,7 +182,7 @@ class GeneralModelConverter(object):
                 return self._convert_many_to_many(col_name,label,
                         description,lst_validators,filter_rel_fields,form_props)
             else:
-                log.warning("relation {0} not supported".format(col_name))
+                log.warning("Relation {0} not supported".format(col_name))
         else:
             return self._convert_simple(col_name,label,description,lst_validators,form_props)
 
@@ -211,12 +216,11 @@ class GeneralModelConverter(object):
             if col_name in extra_fields:
                 form_props[col_name] = extra_fields.get(col_name)
             else:
-                self._convert_col(col_name,
-                        self._get_label(col_name,label_columns),
-                        self._get_description(col_name,description_columns),
-                        filter_rel_fields,form_props)
-        return type('DynamicForm',(DynamicForm,),form_props)
-
+                self._convert_col(col_name, self._get_label(col_name, label_columns),
+                                  self._get_description(col_name, description_columns),
+                                  self._get_validators(col_name, validators_columns),
+                                  filter_rel_fields, form_props)
+        return type('DynamicForm', (DynamicForm,), form_props)
 
 
 class DynamicForm(FlaskForm):

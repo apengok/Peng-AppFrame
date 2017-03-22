@@ -13,7 +13,7 @@ class AJAXSelectField(Field):
     """
         Simple class to convert primary key to ORM objects
         for SQLAlchemy and fab normal processing on add and update
-        This WTF field class is prepared to be used in related views or derectly on forms.
+        This WTF field class is prepared to be used in related views or directly on forms.
 
         :param label:The label to render on form
         :param validators:A list of form validators
@@ -150,7 +150,7 @@ class QuerySelectMultipleField(QuerySelectField):
         super(QuerySelectMultipleField,self).__init__(label,validators,default=default,**kwargs)
         if kwargs.get('allow_blank',False):
             import warnings
-            warnings.warn('allow_blank=Tre does not do anything for QuerySelectMultiopleField.')
+            warnings.warn('allow_blank=True does not do anything for QuerySelectMultiopleField.')
         self._invalid_formdata = False
 
 

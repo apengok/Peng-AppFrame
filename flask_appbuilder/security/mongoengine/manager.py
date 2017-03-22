@@ -2,11 +2,11 @@ import logging
 import uuid
 from werkzeug.security import generate_password_hash
 from ...models.mongoengine.interface import MongoEngineInterface
-from .models import User,Role,PermissionView,Permission,ViewMenu,RegisterUser
-from ..views import AuthDBView,AuthOIDView,ResetMyPasswordView,AuthLDAPView,AuthOAuthView,AuthRemoteUserView,ResetPasswordView,UserDBModelView,UserLDAPModelView,UserOIDModelView,\
-        UserOAuthModelView,UserRemoteUserModelView,RoleModelView,PermissionViewModelView,ViewMenuModelView,
-        PermissionModelView,UserStatsChartView
-
+from .models import User, Role, PermissionView, Permission, ViewMenu, RegisterUser
+from ..views import AuthDBView, AuthOIDView, ResetMyPasswordView, AuthLDAPView, AuthOAuthView, AuthRemoteUserView, \
+    ResetPasswordView, UserDBModelView, UserLDAPModelView, UserOIDModelView, UserOAuthModelView, UserRemoteUserModelView,\
+    RoleModelView, PermissionViewModelView, ViewMenuModelView, PermissionModelView, UserStatsChartView
+#from .registerviews import RegisterUserDBView, RegisterUserOIDView
 from ..manager import BaseSecurityManager
 from ... import const as c
 
@@ -42,7 +42,7 @@ class SecurityManager(BaseSecurityManager):
         if self.auth_user_registration:
             self.registerusermodelview.datamodel = MongoEngineInterface(self.registeruser_model)
 
-        self.rolemdelview.datamodel = MongoEngineInterface(self.role_model)
+        self.rolemodelview.datamodel = MongoEngineInterface(self.role_model)
         self.permissionmodelview.datamodel = MongoEngineInterface(self.permission_model)
         self.viewmenumodelview.datamodel = MongoEngineInterface(self.viewmenu_model)
         self.permissionviewmodelview.datamodel = MongoEngineInterface(self.permissionview_model)
@@ -67,7 +67,7 @@ class SecurityManager(BaseSecurityManager):
             register_user.save()
             return register_user
         except Exception as e:
-            log.error(C.LOGMSG_ERR_SEC_ADD_REGISTER_USER.format(str(e)))
+            log.error(c.LOGMSG_ERR_SEC_ADD_REGISTER_USER.format(str(e)))
             return False
 
     def del_register_user(self,register_user):
@@ -92,7 +92,7 @@ class SecurityManager(BaseSecurityManager):
             user.last_name = last_name
             user.username = username
             user.email = email
-            user.active = active
+            user.active = True
             user.roles.append(role)
             if hashed_password:
                 user.password = hashed_password
@@ -202,7 +202,7 @@ class SecurityManager(BaseSecurityManager):
         return self.permissionview_model.objects(permission=permission,view_menu=view_menu).first()
 
     def find_permissions_view_menu(self,view_menu):
-        return self.permissionvieiw_model.objects(view_menu=view_menu)
+        return self.permissionview_model.objects(view_menu=view_menu)
 
     def add_permission_view_menu(self,permission_name,view_menu_name):
         vm = self.add_view_menu(view_menu_name)

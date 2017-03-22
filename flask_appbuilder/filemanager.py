@@ -37,7 +37,7 @@ class FileManager(object):
         if 'UPLOAD_FOLDER' in ctx.app.config and not base_path:
             base_path = ctx.app.config['UPLOAD_FOLDER']
         if not base_path:
-            raise Exception('Config key UPLAOD_FOLDER is madatory')
+            raise Exception('Config key UPLOAD_FOLDER is mandatory')
 
         self.base_path = base_path
         self.relative_path = relative_path
@@ -109,7 +109,7 @@ class ImageManager(FileManager):
         if 'IMG_UPLOAD_FOLDER' in ctx.app.config and not base_path:
             base_path = ctx.app.config['IMG_UPLOAD_FOLDER']
         if not base_path:
-            raise Exception('Config key IMG_UPLOAD_FOLDER is nandatory')
+            raise Exception('Config key IMG_UPLOAD_FOLDER is mandatory')
 
         self.thumbnail_fn = thumbgen or thumbgen_filename
         self.thumbnail_size = thumbnail_size
@@ -120,7 +120,7 @@ class ImageManager(FileManager):
 
         super(ImageManager,self).__init__(base_path=base_path,
                 relative_path=relative_path,
-                namegen=namgegen,
+                namegen=namegen,
                 allowed_extensions=allowed_extensions,
                 permission=permission,
                 **kwargs)
@@ -190,7 +190,7 @@ class ImageManager(FileManager):
             Resizes the image
 
             :param image:The image object
-            :param size:size is PIL tuple (width,height,force)ex:(200,100,True)
+            :param size:size is PIL tuple (width,heigth,force)ex:(200,100,True)
         """
         (width,height,force) = size
 
@@ -226,7 +226,7 @@ def get_file_original_name(name):
     """
         Use this function to get the user's original filename.
         Filename is concatenated with <UUID>_sep_<FILE NAME>,to avoid collisions.
-        Use this function on your models on an additional funciotn
+        Use this function on your models on an aditional function
 
         ::
             class ProjectFiles(Base):

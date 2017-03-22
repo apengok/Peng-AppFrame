@@ -20,7 +20,8 @@ def expose(url='/',methods=('GET',)):
     def wrap(f):
         if not hasattr(f,'_urls'):
             f._urls = []
-            return f
+        f._urls.append((url,methods))
+        return f
     return wrap
 
 def expose_api(name='',url='',methods=('GET',),description=''):
@@ -92,14 +93,14 @@ class BaseView(object):
         self.appbuilder = appbuilder
 
         #if endpoint name is not provided,getit from the class name
-        self.endppint = endpoint or self.__class__.__name__
+        self.endpoint = endpoint or self.__class__.__name__
 
         if self.route_base is None:
             self.route_base = '/' + self.__class__.__name__.lower()
 
         self.static_folder = static_folder
         if not static_folder:
-            self.blueprint = Bluepirnt(self.endpoint,__name__,
+            self.blueprint = Blueprint(self.endpoint,__name__,
                     url_prefix=self.route_base,
                     template_folder=self.template_folder)
         else:
@@ -128,7 +129,7 @@ class BaseView(object):
     def _prettify_name(self,name):
         return re.sub(r'(?<=.)([A-Z])',r' \1',name)
 
-    def _prittify_column(self,name):
+    def _prettify_column(self,name):
         return re.sub('[._]',' ',name).title()
 
     def update_redirect(self):
@@ -328,7 +329,7 @@ class BaseCRUDView(BaseModelView):
     list_widget = ListWidget
     edit_widget = FormWidget
     add_widget = FormWidget
-    show_widgete = ShowWidget
+    show_widget = ShowWidget
 
     actions = None
 
@@ -359,7 +360,7 @@ class BaseCRUDView(BaseModelView):
                     self.description_columns,
                     self.validators_columns,
                     self.edit_form_extra_fields,
-                    self.edit_from_query_rel_fields)
+                    self.edit_form_query_rel_fields)
 
     def _init_titles(self):
         super(BaseCRUDView,self)._init_titles()
@@ -368,7 +369,7 @@ class BaseCRUDView(BaseModelView):
         if not self.list_title:
             self.list_title = 'List ' + self._prettify_name(class_name)
         if not self.add_title:
-            self.add_title = 'Add ' + self._prittify_name(class_name)
+            self.add_title = 'Add ' + self._prettify_name(class_name)
         if not self.edit_title:
             self.edit_title = 'Edit ' + self._prettify_name(class_name)
         if not self.show_title:
@@ -387,7 +388,7 @@ class BaseCRUDView(BaseModelView):
         self.edit_form_extra_fields = self.edit_form_extra_fields or {}
         self.show_exclude_columns = self.show_exclude_columns or []
         self.add_exclude_columns = self.add_exclude_columns or []
-        self.edit_exclcude_columns = self.edit_exclude_columns or []
+        self.edit_exclude_columns = self.edit_exclude_columns or []
 
         list_cols = self.datamodel.get_user_columns_list()
         self.list_columns = self.list_columns or [list_cols[0]]
@@ -453,8 +454,8 @@ class BaseCRUDView(BaseModelView):
                 order_column,order_direction = orders.get(view.__class__.__name__)
             else:
                 order_column,order_direction = '',''
-            widgets['related_view'].append(self._get_related_view_widget(item,view,
-                oreder_column,order_direction,
+            widgets['related_views'].append(self._get_related_view_widget(item,view,
+                order_column,order_direction,
                 page=pages.get(view.__class__.__name__),
                 page_size=page_sizes.get(view.__class__.__name__)))
         return widgets
@@ -491,7 +492,7 @@ class BaseCRUDView(BaseModelView):
         actions = actions or self.actions
         show_fieldsets = show_fieldsets or self.show_fieldsets
         widgets['show']=self.show_widget(pk=pk,
-                label_columns=self.show_columns,
+                label_columns=self.label_columns,
                 include_columns=self.show_columns,
                 value_columns=self.datamodel.get_values_item(item,self.show_columns),
                 formatters_columns=self.formatters_columns,
@@ -557,7 +558,7 @@ class BaseCRUDView(BaseModelView):
         if not item:
             abort(404)
         widgets = self._get_show_widget(pk,item)
-        self.update_redirection()
+        self.update_redirect()
         return self._get_related_views_widgets(item,orders=orders,
                 pages=pages,page_sizes=page_sizes,widgets=widgets)
 

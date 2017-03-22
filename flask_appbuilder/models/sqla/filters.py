@@ -5,7 +5,7 @@ from ..filters import BaseFilter,FilterRelation,BaseFilterConverter
 log = logging.getLogger(__name__)
 
 
-__all__ = ['SQLAFilterConverter','FilterEqual','FilterNotStartWith','FilterStartsWith','FilterContains',
+__all__ = ['SQLAFilterConverter','FilterEqual','FilterNotStartsWith','FilterStartsWith','FilterContains',
         'FilterNotEqual','FilterEndsWith','FilterEqualFunction','FilterGreater','FilterNotEndsWith',
         'FilterRelationManyToManyEqual','FilterRelationOneToManyEqual','FilterRelationOneToManyNotEqual',
         'FilterSmaller']
@@ -54,8 +54,8 @@ class FilterNotStartsWith(BaseFilter):
 class FilterEndsWith(BaseFilter):
     name = lazy_gettext('Ends with')
 
-    def apply(self,query,data):
-        query,field = get_field_setup_query(query,self.model,self.column_name)
+    def apply(self, query, value):
+        query, field = get_field_setup_query(query, self.model, self.column_name)
         return query.filter(field.like('%' + value))
 
 
@@ -75,7 +75,7 @@ class FilterContains(BaseFilter):
         return query.filter(field.like('%' + value + '%'))
 
 
-class FielterNotContains(BaseFilter):
+class FilterNotContains(BaseFilter):
     name = lazy_gettext('Not Contains')
 
     def apply(self,query,value):
@@ -116,7 +116,7 @@ class FilterSmaller(BaseFilter):
     def apply(self,query,value):
         query,field = get_field_setup_query(query,self.model,self.column_name)
         value = set_value_to_type(self.datamodel,self.column_name,value)
-        return query.filter(feild < value)
+        return query.filter(field < value)
 
 
 class FilterRelationOneToManyEqual(FilterRelation):
@@ -125,7 +125,7 @@ class FilterRelationOneToManyEqual(FilterRelation):
     def apply(self,query,value):
         query,field = get_field_setup_query(query,self.model,self.column_name)
         rel_obj = self.datamodel.get_related_obj(self.column_name,value)
-        return quer,filter(field == rel_obj)
+        return query.filter(field == rel_obj)
 
 
 class FilterRelationOneToManyNotEqual(FilterRelation):
@@ -155,7 +155,7 @@ class FilterEqualFunction(BaseFilter):
 
 
 class FilterInFunction(BaseFilter):
-    name = "FIlter view where field is in a list returned by a function"
+    name = "Filter view where field is in a list returned by a function"
 
     def apply(self,query,func):
         query,field = get_field_setup_query(query,self.model,self.column_name)
@@ -170,7 +170,7 @@ class SQLAFilterConverter(BaseFilterConverter):
     conversion_table = (('is_relation_many_to_one',[FilterRelationOneToManyEqual,
         FilterRelationOneToManyNotEqual]),
         ('is_relation_one_to_one',[FilterRelationOneToManyEqual,FilterRelationOneToManyNotEqual]),
-        ('is_relation_many_to_many',[FilterRelaationManyToManyEqual]),
+        ('is_relation_many_to_many',[FilterRelationManyToManyEqual]),
         ('is_relation_one_to_many',[FilterRelationManyToManyEqual]),
         ('is_text',[FilterStartsWith,
                     FilterEndsWith,
@@ -178,16 +178,16 @@ class SQLAFilterConverter(BaseFilterConverter):
                     FilterEqual,
                     FilterNotStartsWith,
                     FilterNotEndsWith,
-                    FilterNOtContains,
-                    FilterNOtEqual]),
+                    FilterNotContains,
+                    FilterNotEqual]),
         ('is_string',[FilterStartsWith,
                     FilterEndsWith,
                     FilterContains,
                     FilterEqual,
                     FilterNotStartsWith,
                     FilterNotEndsWith,
-                    FilterNOtContains,
-                    FilterNOtEqual]),
+                    FilterNotContains,
+                    FilterNotEqual]),
         ('is_integer',[FilterEqual,
                         FilterGreater,
                         FilterSmaller,

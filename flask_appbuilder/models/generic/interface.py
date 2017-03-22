@@ -18,7 +18,7 @@ class GenericInterface(BaseInterface):
         super(GenericInterface,self).__init__(obj)
 
     def query(self,filters=None,order_column='',order_direction='',page=None,page_size=None):
-        query = self.session.query(self.obh)
+        query = self.session.query(self.obj)
         if filters:
             query = filters.apply_all(query)
         if order_column != '':

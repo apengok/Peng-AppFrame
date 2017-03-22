@@ -122,7 +122,7 @@ class ListWidget(RenderTemplateWidget):
 
         label_columns = []
         include_columns = []
-        vallue_columns = []
+        value_columns = []
         order_columns = []
         page = None
         page_size = None
@@ -165,5 +165,5 @@ class ListItem(ListWidget):
     template = 'appbuilder/general/widgets/list_item.html'
 
 
-class ListBlock(ListsWidget):
+class ListBlock(ListWidget):
     template = 'appbuilder/general/widgets/list_block.html'
