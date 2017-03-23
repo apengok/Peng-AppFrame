@@ -413,7 +413,7 @@ class AuthOIDView(AuthView):
                 session['remember_me'] = form.remember_me.data
                 return self.appbuilder.sm.oid.try_login(form.openid.data,ask_for=self.oid_ask_for,
                         ask_for_optional=self.oid_ask_for_optional)
-            return self.render_template(self.login_template,title=title,form=form,
+            return self.render_template(self.login_template,title=self.title,form=form,
                     providers=self.appbuilder.sm.openid_providers,appbuilder=self.appbuilder)
 
         @self.appbuilder.sm.oid.after_login
@@ -444,7 +444,7 @@ class AuthOAuthView(AuthView):
     def login(self,provider=None,register=None):
         log.debug('Provider:{0}'.format(provider))
         if g.user is not None and g.user.is_authenticated():
-            log.debug("Already authentiated {0}".format(g.user))
+            log.debug("Already authenticated {0}".format(g.user))
             return redirect(self.appbuilder.get_url_for_index)
         if provider is None:
             return self.render_template(self.login_template,providers=self.appbuilder.sm.oauth_providers,

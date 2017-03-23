@@ -20,7 +20,7 @@
                 {% set expanded = fieldset_item[1].get('expanded') %}
             {% endif %}
             {% call lib.accordion_tag(loop.index,fieldset_item[0],expanded) %}
-            <div class="talble-responsive">
+            <div class="table-responsive">
                 <table class="table table-responsive table-bordered">
                     {% for item in fieldset_item[1].get('fields') %}
                         {% if item not in exclude_cols %}

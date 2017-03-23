@@ -138,9 +138,10 @@
             <a href="{{ init_page | link_page(modelview_name) }}">&laquo;</a>
         </li>
     {% else %}
-        <li class="disabled">
-            <a href="javascript:void(0)">&laquo;</a>
-        </li>
+    <li class="disabled">
+        <a href="javascript:void(0)">&laquo;</a>
+    </li>
+    {% endif %}
     {% if page > 0 %}
         <li>
             <a href="{{ (page - 1) | link_page(modelview_name) }}">&lt;</a>
@@ -183,7 +184,7 @@
     {% endif %}
 </ul>
 {% endif %}
-{% enmacro %}
+{% endmacro %}
 
 
 {% macro render_field(field,begin_sep_label='',end_sep_label='',begin_sep_field='',end_sep_field='') %}
@@ -243,7 +244,8 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="panel-title">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#{{ id }}" href="#{{ id }}_href">{{ label }}</a><span class="caret"></span>
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#{{id}}"
+                   href="#{{id}}_href">{{label}}</a><span class="caret"></span>
             </h4>
         </div>
         {% if open %}
@@ -288,7 +290,7 @@
 {% macro btn_crud(can_show,can_edit,can_delete,pk,modelview_name,filters) %}
     <div class="btn-group btn-group-xs" style="display:flex;">
         {% if can_show %}
-            {% set path = url_for(modelview_name + '.show'<Plug>PeepOpenk=pk) %}
+            {% set path = url_for(modelview_name + '.show',pk=pk) %}
             {% set path = path | set_link_filters(filters) %}
             {{ lnk_show(path) }}
         {% endif %}
@@ -333,7 +335,7 @@
 
 {% macro lnk_show(my_href) %}
     <a href="{{ my_href }}" class="btn btn-sm btn-primary" data-toggle="tooltip" rel="tooltip" title="{{ _('Show record') }}">
-        <i class="fa fa-record"></i>
+        <i class="fa fa-search"></i>
     </a>
 {% endmacro %}
 

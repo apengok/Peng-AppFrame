@@ -16,11 +16,11 @@
             {% endif %}
 
             {% if can_edit or can_delete %}
-            <th class="col-md-1 col-lg-1 action_checkboxes"></th>
+            <th class="col-md-1 col-lg-1 col-sm-1 action_checkboxes"></th>
             {% endif %}
 
             {% for item in include_columns %}
-                {% if item in order-columns %}
+                {% if item in order_columns %}
                     {% set res = item | get_link_order(modelview_name) %}
                         {% if res == 2 %}
                         <th><a href={{ item | link_order(modelview_name) }}>{{ label_columns.get(item) }}
@@ -30,7 +30,7 @@
                                 <i class="fa fa-chevron-down pull-right"></i></a></th>
                         { % else %}
                         <th><a href={{ item | link_order(modelview_name) }}>{{ label_columns.get(item) }}
-                                <i class="fa fa-arrors-v pull-right"></i></a></th>
+                                <i class="fa fa-arrows-v pull-right"></i></a></th>
                         {% endif %}
                 {% else %}
                     <th>{{ label_columns.get(item) }}</th>
@@ -64,7 +64,7 @@
                             {{ item[value] | safe }}</a>
                     {% else %}
                         {{ item[value] | safe }}
-                    {% end %}
+                    {% endif %}
                 </td>
             {% endfor %}
         </tr>
@@ -73,5 +73,5 @@
 
 {% block end_content scoped %}
     </table>
-</tr>
+</div>
 {% endblock %}

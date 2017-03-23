@@ -124,7 +124,7 @@ msgstr ""
 #: templates/appbuilder/general/security/activation.html:5
 #: templates/appbuilder/index.html:4
 msgid "Welcome"
-msgstr ""
+msgstr "欢迎"
 
 #: templates/appbuilder/general/confirm.html:6
 msgid "User confirmation needed"
