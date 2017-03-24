@@ -307,7 +307,7 @@ class RestCRUDView(BaseCRUDView):
         else:
             filters = _filters
         result = rel_datamodel.query(filters)[1]
-        rel_list = list()
+        ret_list = list()
         for item in result:
             pk = rel_datamodel.get_pk_value(item)
             ret_list.append({'id':int(pk),'text':str(item)})
@@ -465,10 +465,10 @@ class MasterDetailView(BaseCRUDView):
                      datamodel = SQLAInterface(MasterTable, db.session)
                      related_views = [DetailView]
     """
-    list_template = 'appbuilder/general/model/lef_master_detail.html'
+    list_template = 'appbuilder/general/model/left_master_detail.html'
     list_widget = ListMasterWidget
     master_div_width = 2
-    """ set to configure bootstrap class for master grid size"""
+    """ Set to configure bootstrap class for master grid size"""
 
     @expose('/list/')
     @expose('/list/<pk>')
@@ -583,7 +583,7 @@ class CompactCRUDMixin(BaseCRUDView):
         return self.render_template(self.list_template,
                 title=self.list_title,widgets=list_widgets)
 
-    @expose('/add',methods=['GET','POST'])
+    @expose('/add/',methods=['GET','POST'])
     @has_access
     def add(self):
         widgets = self._add()

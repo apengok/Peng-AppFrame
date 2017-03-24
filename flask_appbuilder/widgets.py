@@ -69,7 +69,7 @@ class SearchWidget(FormWidget):
 
     def __init__(self,**kwargs):
         self.filters = kwargs.get('filters')
-        return super(SearchWidget,self).__init(**kwargs)
+        return super(SearchWidget,self).__init__(**kwargs)
 
     def __call__(self,**kwargs):
         """ create dict labels based on form"""
@@ -88,13 +88,13 @@ class SearchWidget(FormWidget):
         kwargs['label_columns'] = label_columns
         kwargs['form_fields'] = form_fields
         kwargs['search_filters'] = search_filters
-        kwargs['active_filters'] = self.get_filters_values_tojson()
+        kwargs['active_filters'] = self.filters.get_filters_values_tojson()
         return super(SearchWidget,self).__call__(**kwargs)
 
 
 class ShowWidget(RenderTemplateWidget):
     """
-        Showwidget implements a template as an widget it takes the following arguments
+        Showidget implements a template as an widget it takes the following arguments
 
         pk = None
         label_columns = []

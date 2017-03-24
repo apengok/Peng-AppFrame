@@ -38,7 +38,7 @@ class BaseRegisterUser(PublicFormView):
     message = lazy_gettext('Registration sent to your email')
     error_message=lazy_gettext('Not possible to register you at the moment,try again later')
     false_error_message = lazy_gettext('Registration not found')
-    from_title = lazy_gettext('Fill out the registration form')
+    form_title = lazy_gettext('Fill out the registration form')
 
     def send_email(self,register_user):
 
@@ -52,7 +52,7 @@ class BaseRegisterUser(PublicFormView):
         msg.subject = self.email_subject
         url = url_for('.activation',_external=True,activation_hash=register_user.registration_hash)
         msg.html = self.render_template(self.email_template,
-                url_url,
+                url=url,
                 username=register_user.username,
                 first_name=register_user.first_name,
                 last_name=register_user.last_name)

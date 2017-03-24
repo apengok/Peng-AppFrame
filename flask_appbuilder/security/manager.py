@@ -258,9 +258,9 @@ class BaseSecurityManager(AbstractSecurityManager):
         """
         if provider == 'github' or provider == 'githublocal':
             me = self.appbuilder.sm.oauth_remotes[provider].get('user')
-            log.debug('User info from Github:{0}'.format(me.data))
-            return {'username':me.data.get('login')}
-
+            log.debug("User info from Github: {0}".format(me.data))
+            return {'username': me.data.get('login')}
+        # for twitter
         if provider == 'twitter':
             me = self.appbuilder.sm.oauth_remotes[provider].get('account/settings.json')
             log.debug("User info from Twitter:{0}".format(me.data))

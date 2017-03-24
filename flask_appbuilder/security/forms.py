@@ -39,13 +39,13 @@ class ResetPasswordForm(DynamicForm):
 class RegisterUserDBForm(DynamicForm):
     username = StringField(lazy_gettext('User Name'),validators=[DataRequired()],widget=BS3TextFieldWidget())
     first_name = StringField(lazy_gettext('First Name'),validators=[DataRequired()],widget=BS3TextFieldWidget())
-    lastname = StringField(lazy_gettext('Last Name'),validators=[DataRequired()],widget=BS3TextFieldWidget())
+    last_name = StringField(lazy_gettext('Last Name'),validators=[DataRequired()],widget=BS3TextFieldWidget())
     email = StringField(lazy_gettext('Email'),validators=[DataRequired(),Email()],widget=BS3TextFieldWidget())
     password = PasswordField(lazy_gettext('Password'),description=lazy_gettext('Please use a good password policy,this application does not check this for you'),
             validators=[DataRequired()],widget=BS3PasswordFieldWidget())
     conf_password = PasswordField(lazy_gettext('Confirm Password'),description=lazy_gettext('Please rewrite the password to confirm'),
             validators=[EqualTo('password',message=lazy_gettext('Passwords must match'))],widget=BS3PasswordFieldWidget())
-    recaptcha = RecaptchaField()
+    #recaptcha = RecaptchaField()
 
 
 

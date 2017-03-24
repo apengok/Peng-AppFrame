@@ -484,7 +484,7 @@ class BaseCRUDView(BaseModelView):
                 formatters_columns=self.formatters_columns,
                 page=page,page_size=page_size,
                 count=count,pks=pks,actions=actions,
-                filters=filters,modelview_name=self.__class__.__name)
+                filters=filters,modelview_name=self.__class__.__name__)
         return widgets
 
     def _get_show_widget(self,pk,item,widgets=None,actions=None,show_fieldsets=None):
