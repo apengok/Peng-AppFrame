@@ -37,9 +37,22 @@ LANGUAGES = {
 UPLOAD_FOLDER = basedir + '/app/static/uploads/'
 IMG_UPLOAD_FOLDER = basedir + '/app/static/uploads/'
 IMG_UPLOAD_URI = '/static/uploads/'
-AUTH_TYPE = 0
+AUTH_TYPE = 1
 AUTH_USER_REGISTRATION = True
-AUTH_USER_REGISTRATION_ROLE = 'Public'
+AUTH_USER_REGISTRATION_ROLE = 'Admin'
+#config for Flask-WTF Recaptcha necessary for user registration
+RECAPTCHA_PUBLIC_KEY = '6LedRP0SAAAAAOF03Nsv_ny2NzOF_Dthe_Xn269v'
+RECAPTCHA_PRIVATE_KEY = '6LedRP0SAAAAAPnsdEKgj5VU1QBFcPv7mo8cW0So'
+#Config for Flask-Mail neccessary for user registration
+
+MAIL_PORT=587
+MAIL_USE_SSL=False
+MAIL_SERVER='smtp.mail.yahoo.com'
+MAIL_USE_TLS=True
+MAIL_USERNAME='peng.weilin@yahoo.com'
+MAIL_PASSWORD='57266713sweet'
+MAIL_DEFAULT_SENDER='peng.weilin@yahoo.com'
+
 #AUTH_LDAP_SERVER = "ldap://dc.domain.net"
 AUTH_ROLE_ADMIN = 'Admin'
 AUTH_ROLE_PUBLIC = 'Public'
